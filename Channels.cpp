@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/14 15:33:37 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/14 17:42:25 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,6 @@ Channels::~Channels(){}
 
 void Channels::sendMessage(std::string message, int sender)
 {
-	//std::vector<int>::iterator itv = _user.begin();
-	//std::cout << message << sender << std::endl;
 	for (std::vector<int>::iterator itv = _user.begin(); itv != _user.end(); itv++)
 	{
 		if (*itv != sender)
@@ -66,7 +64,6 @@ void Channels::addUser(const int user)
 {
 	if (!VerifUser(user))
 		_user.push_back(user);
-
 }
 
 void Channels::addAdmin(int userFd)

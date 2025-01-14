@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/09 15:20:00 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/14 19:10:24 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,12 +69,12 @@ void Server::serverLoop()
             std::cerr << "Erreur ou timeout dans poll()\n";
             break;
         }
-        for (size_t i = 0; i < pollFds.size(); ++i) {
+        for (size_t i = 0; i < pollFds.size(); ++i)
+		{
             // Vérifier le socket du serveur
-            if (pollFds[i].revents & POLLIN) {
-
-
-
+            if (pollFds[i].revents & POLLIN)
+			{
+				// Nouvelle connextion
                 if (pollFds[i].fd == _serverfd)
                 {
                     // Accepter une nouvelle connexion
@@ -94,112 +94,108 @@ void Server::serverLoop()
                         _channels["general"].addUser(clientSocket);
                     }
                 }
-
-
-                
+				// Message d'un user
                 else
                 {
-                    // Recevoir des messages d'un client
+					// Parsing message client (salon et contenu)
                     memset(buffer, 0, BUFFER_SIZE);
                     int bytesReceived = recv(pollFds[i].fd, buffer, BUFFER_SIZE, 0);
                     std::string message(buffer);
-                    size_t pos = message.find(" ");
                     std::string salon;
-                    std::string msgContent;
-                    std::ostringstream oss;
-                    oss << i;
-                    std::string userId = oss.str();
+                    /*std::string msgContent;
+                    size_t pos = message.find(" ");
                     if (pos != std::string::npos)
                     {
                         salon = message.substr(8, pos - 8);
                         msgContent = message.substr(pos + 1);
-                    }
+                    }*/
+					if (salon.empty())
+							salon = "general";
 
-
-
+					// Si message vide, déconnection
                     if (bytesReceived <= 0)
                     {
-                        // Déconnexion
                         std::cout << "Client déconnecté : " << pollFds[i].fd << "\n";
                         close(pollFds[i].fd);
                         pollFds.erase(pollFds.begin() + i);
                         --i; // Ajuster l'index après suppression
+						continue;
                     }
 
-
-
-
-                    else if (message.find("JOIN") == 0)
+					// Recherche de commandes
+                    if (message.find("JOIN") == 0)
                     {
-                        std::string salons = message.substr(5);
-                        salons.erase(salons.find_last_not_of(" \t\n\r") + 1);
-                        if (salons.empty())
+						std::cout << "this is JOIN" << std::endl;
+                        std::string joinSalon = message.substr(5);
+                        joinSalon.erase(joinSalon.find_last_not_of(" \t\n\r") + 1);
+                        if (joinSalon.empty())
                         {
                             std::cerr << "Erreur : nom de salons vide reçu.\n";
-                            std::string errMessage = ":server 461 Client" + userId + " JOIN :Pas assez de paramètres.\n";
+                            std::string errMessage = ":server 461 Client X JOIN :Pas assez de paramètres.\n";
                             send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
                             continue;
                         }
-                        bool userTrouve = false;
-                        if (_channels.find(salons) == _channels.end())
+						// Creation de salon
+                        if (_channels.find(joinSalon) == _channels.end())
                         {
-                            Channels nouveausalons(salons, i);
-                            _channels[salons] = nouveausalons;
+							std::cout << "salon " << joinSalon << " created" << std::endl;
+                            Channels nouveausalons(joinSalon, pollFds[i].fd);
+                            _channels[joinSalon] = nouveausalons;
+							std::string joinMessage =  "Comme il n'existe pas encore, vous avez cree le salon " + joinSalon + "\n";
+							send(pollFds[i].fd, joinMessage.c_str(), joinMessage.size(), 0);
+							continue;
                         }
-                        else
-                            userTrouve = _channels[salons].VerifUser(i);
-                        if (!userTrouve)
+						// Ajoute l'user au salon
+                        if (!_channels[joinSalon].VerifUser(pollFds[i].fd))
                         {
-                            std::string joinMessage = ":Client" + userId + " JOIN " + salons + "\n";
-                            _channels[salons].sendMessage(joinMessage, i);
-                            std::string topicMessage = ":server TOPIC " + salons + " :Bienvenue dans " + salons + "\n";
-                            send(i, topicMessage.c_str(), topicMessage.size(), 0);
-                            std::string namesMessage = ":server 353 Client" + userId + " = " + salons + " :";
-                            std::vector<int> membre = _channels[salons].getUsers();
-                            for (size_t k = 0; k < membre.size(); ++k)
-                            {
-                                oss << membre[k];
-                                namesMessage += "Client" + oss.str() + " ";
-                            }
-                            namesMessage += "\n:server 366 Client" + userId + " " + salons + " :End of /NAMES list.\n";
-                            send(i, namesMessage.c_str(), namesMessage.size(), 0);
+                            std::string joinMessage = ":Client X JOIN " + joinSalon + "\n";
+                            _channels[joinSalon].sendMessage(joinMessage, pollFds[i].fd);
+							_channels[joinSalon].addUser(pollFds[i].fd);
+                            std::string topicMessage = ":server TOPIC " + joinSalon + " :Bienvenue dans " + joinSalon + "\n";
+                            send(pollFds[i].fd, topicMessage.c_str(), topicMessage.size(), 0);
                         }
+						else
+							std::cout << "le user est deja dans le salon " << joinSalon << std::endl;
                     }
                     
-                    
-                    
-                    /*
                     else if (message.find("KICK") == 0)
                     {
-                        std::string userToKick = message.substr(5);
+						std::cout << "test COUCOUCOU\n";
+						salon = "test";
+
+						// Recuperer le user a KICK
+                        /*std::string userToKick = message.substr(5);
                         std::stringstream ss(userToKick);
                         int userKick;
                         ss >> userKick;
                         if (ss.fail())
                         {
                             // faire une fonction qui recup le fd a partir du nickname
-                            userKick
-                        }
-                        bool adminTrouve = false;
-                        bool userTrouve = _channels[salon].VerifUsers(userKick);
-                        if (adminTrouve = _channels[salon].VerifAdmin(i) && userTrouve == true)
+                        }*/
+					    std::string userKickName = message.substr(5);
+                        userKickName.erase(userKickName.find_last_not_of(" \t\n\r") + 1);
+						int userKick = std::atoi(userKickName.c_str());
+
+						std::cout << "test coucou\n";
+
+						if (_channels[salon].VerifAdmin(pollFds[i].fd) && _channels[salon].VerifUser(userKick))
+						{
+                            std::string kickMessage = ":server " + salon + " " + (char)userKick + "was kick" + "\n";
+                            _channels[salon].sendMessage(kickMessage, 0);
+                            //_user.erase(std::remove(_user.begin(), _user.end(), userKick), _user.end());    <== SUPPRIMER LE USER
+						}
+                        else if (!_channels[salon].VerifAdmin(pollFds[i].fd))
                         {
-                            oss << userToKick
-                            std::string kick = ":server " + salon + oss.str() + "was kick" + "\n";
-                            _channels[salons].sendMessage(kick, 0);
-                            _user.erase(std::remove(_user.begin(), _user.end(), userKick), _user.end());
-                        }
-                        else if (userTrouve == false)
-                        {
-                            std::string notAdmin = ":server " + salon + userId + "no user in channel" + "\n";
-                            send(i, notAdmin.c_str(), notAdmin.size(), 0);
+                            std::string notAdmin = ":server " + salon + "no permission for kick" + "\n";
+                            send(pollFds[i].fd, notAdmin.c_str(), notAdmin.size(), 0);
                         }  
                         else
                         {
-                            std::string notAdmin = ":server " + salon + userId + "no permission for kick" + "\n";
-                            send(i, notAdmin.c_str(), notAdmin.size(), 0);
+                            std::string notAdmin = ":server " + salon + "user not found in channel" + "\n";
+                            send(pollFds[i].fd, notAdmin.c_str(), notAdmin.size(), 0);
                         }  
                     }
+					/*
                     else if (message.find("INVITE") == 0)
                     {
                     }
@@ -213,11 +209,12 @@ void Server::serverLoop()
 
                     else
                     {
+						std::cout << "salon: " << salon << std::endl;
                         std::cout << "Message reçu de " << pollFds[i].fd << ": " << message << "\n";
                         std::ostringstream broadcastStream;
-                        broadcastStream << "Client " << _user[i].getUserNickName() << ": " << message;
+                        broadcastStream << "Client " << pollFds[i].fd << _user[i].getUserNickName() << ": " << message;
                         std::string broadcastMessage = broadcastStream.str();
-                        _channels[salon].sendMessage(broadcastMessage, i);
+                        _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd); //Probleme de salon actuelle
                     }
                 }
             }
