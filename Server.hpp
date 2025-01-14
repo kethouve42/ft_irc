@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <map>
+#include <climits>
 
 #include "User.hpp"
 #include "Channels.hpp"

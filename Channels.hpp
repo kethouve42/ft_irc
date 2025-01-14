@@ -34,7 +34,7 @@ public:
 	bool VerifUser(int userFd);
 
 	/*Getter*/
-	std::vector<int> Channels::getUsers() const;
+	std::vector<int> getUsers() const;
 	/*Setter*/
 	void addUser(const int user);
 	void setUserLimit(const int limit);

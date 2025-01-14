@@ -17,9 +17,10 @@ User::User()
 
 User::User(int fd)
 {
+	std::ostringstream oss;
 	_userFd = fd;
-	_nickName = std::to_string(fd);
-	_username = nullptr;
+	oss << fd;
+	_nickName = oss.str();
 }
 
 User::~User(){}

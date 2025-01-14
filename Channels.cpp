@@ -17,19 +17,18 @@ Channels::Channels(){}
 Channels::Channels(std::string name, int fdCreator)
 {
 	this->_channelName = name;
-	this->_channelPass = nullptr;
-	this->userLimit = INT32_MAX;
-	this->_admins[0] = fdCreator;
-	this->_user[0] = fdCreator;
+	this->userLimit = INT_MAX;
+	this->_admins.push_back(fdCreator);
+	this->_user.push_back(fdCreator);
 }
 
 Channels::~Channels(){}
 
 void Channels::sendMessage(std::string message, int sender)
 {
-	std::vector<int>::iterator itv = _user.begin();
-	std::cout << message << sender << std::endl;
-	for (itv = ++itv; itv != _user.end(); itv++)
+	//std::vector<int>::iterator itv = _user.begin();
+	//std::cout << message << sender << std::endl;
+	for (std::vector<int>::iterator itv = _user.begin(); itv != _user.end(); itv++)
 	{
 		if (*itv != sender)
 			send(*itv, message.c_str(), message.size(), 0);
@@ -38,8 +37,7 @@ void Channels::sendMessage(std::string message, int sender)
 
 bool Channels::VerifAdmin(int userFd)
 {
-	std::vector<int>::iterator itv = _admins.begin();
-	for(itv = ++itv; itv != _admins.end(); itv++)
+	for(std::vector<int>::iterator itv = _admins.begin(); itv != _admins.end(); itv++)
 	{
 		if (userFd == *itv)
 			return true;
@@ -49,8 +47,7 @@ bool Channels::VerifAdmin(int userFd)
 
 bool Channels::VerifUser(int userFd)
 {
-	std::vector<int>::iterator itv = _user.begin();
-	for(itv = ++itv; itv != _user.end(); itv++)
+	for(std::vector<int>::iterator itv = _user.begin(); itv != _user.end(); itv++)
 	{
 		if (userFd == *itv)
 			return true;
@@ -69,6 +66,7 @@ void Channels::addUser(const int user)
 {
 	if (!VerifUser(user))
 		_user.push_back(user);
+
 }
 
 void Channels::addAdmin(int userFd)
