@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/09 15:52:47 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/15 15:17:26 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 #include <sstream>
 #include <map>
 #include <climits>
+#include <algorithm> 
 
 #include "User.hpp"
 #include "Channels.hpp"
