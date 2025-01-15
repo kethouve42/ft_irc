@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/15 16:10:58 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/15 17:44:15 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ Channels::Channels(std::string name, int fdCreator)
 	this->_userLimit = INT_MAX;
 	this->_admins.push_back(fdCreator);
 	this->_user.push_back(fdCreator);
+	_invitMode = false;
 }
 
 Channels::~Channels(){}

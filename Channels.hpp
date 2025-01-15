@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/15 16:10:44 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/15 17:43:58 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,9 @@ private:
 	std::string 		_channelPass;
 	std::vector<int> 	_user;
 	std::vector<int> 	_admins;
+	std::vector<int>	_invited;
 	int					_userLimit;
+	bool				_invitMode;
 public:
 	Channels();
 	Channels(std::string name, int fdCreator);

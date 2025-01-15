@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/14 19:10:24 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/15 17:45:48 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,14 +136,14 @@ void Server::serverLoop()
                         if (salon[0] == '#')
                         {
                             std::ostringstream broadcastStream;
-                            broadcastStream << "Client " << pollFds[i].fd << _user[i].getUserNickName() << ": " << msgContent;
+                            broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << msgContent;
                             std::string broadcastMessage = broadcastStream.str();
-                            _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd); //Probleme de salon actuelle
+                            _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd);
                         }
                         else
                         {
                             std::ostringstream broadcastStream;
-                            broadcastStream << "Client " << pollFds[i].fd << _user[i].getUserNickName() << ": " << msgContent;
+                            broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << msgContent;
                             std::string broadcastMessage = broadcastStream.str();
                             int userfd;
                             std::istringstream ss(salon);
@@ -157,13 +157,13 @@ void Server::serverLoop()
                                     {
                                         userfd = it->first;
                                         userFound = true;
-                                        return;
+                                        break;
                                     }
                                 }
                                 if (!userFound)
                                 {
                                     std::cerr << "Utilisateur avec nickname ou ID " << salon << " introuvable.\n";
-                                    return;
+                                    continue;
                                 }
                             }
                             send(userfd, broadcastMessage.c_str(), broadcastMessage.size(), 0);
@@ -208,23 +208,44 @@ void Server::serverLoop()
                     else if (message.find("KICK") == 0)
                     {
                         std::cout << "KICK\n";
-						// Recuperer le user a KICK
-                        /*std::string userToKick = message.substr(5);
-                        std::stringstream ss(userToKick);
-                        int userKick;
+					    std::string userKickName;
+
+					   size_t pos = message.find(" ");
+                        if (pos != std::string::npos)
+                        {
+                            temp = message.substr(5);
+                            size_t pos = temp.find(" ");
+                            salon = temp.substr(0, pos);
+                            userKickName = temp.substr(pos + 1);
+                        }
+                        userKickName.erase(userKickName.find_last_not_of(" \t\n\r") + 1);
+						std::istringstream ss(userKickName);
+						int userKick;
                         ss >> userKick;
                         if (ss.fail())
-                        {
-                            // faire une fonction qui recup le fd a partir du nickname
-                        }*/
-					    std::string userKickName = message.substr(5);
-                        userKickName.erase(userKickName.find_last_not_of(" \t\n\r") + 1);
-						int userKick = std::atoi(userKickName.c_str());
-
-						if (_channels[salon].VerifAdmin(pollFds[i].fd) && _channels[salon].VerifUser(userKick))
 						{
-                            std::string kickMessage = ":server " + salon + " " + (char)userKick + "was kick" + "\n";
+
+							bool userFound = false;
+                            for (std::map<int, User>::iterator it = _user.begin(); it != _user.end(); ++it)
+                            {
+                                if (it->second.getUserNickName() == userKickName)
+                                {
+                                    userKick = it->first;
+                                    userFound = true;
+                                    break;
+                                }
+                            }
+                            if (!userFound)
+                            {
+                                std::cerr << "Utilisateur avec nickname ou ID " << userKickName << " introuvable.\n";
+                                continue;
+                            }
+						}
+						if (_channels[salon].VerifAdmin(pollFds[i].fd) && _channels[salon].VerifUser(pollFds[i].fd))
+						{
+                            std::string kickMessage = ":server " + salon + " " + _user[userKick].getUserNickName() + " was kick" + "\n";
                             _channels[salon].sendMessage(kickMessage, 0);
+							_channels[salon].deleteUser(userKick);
 						}
                         else if (!_channels[salon].VerifAdmin(pollFds[i].fd))
                         {
@@ -264,7 +285,7 @@ void Server::serverLoop()
                         std::ostringstream broadcastStream;
                         broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
                         std::string broadcastMessage = broadcastStream.str();
-                        _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd); //Probleme de salon actuelle
+                        _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd);
                     }
                 }
             }
