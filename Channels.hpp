@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/15 17:43:58 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/16 14:33:42 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,12 +34,17 @@ public:
 	void addAdmin(int userFD);
 	bool VerifAdmin(int userFd);
 	bool VerifUser(int userFd);
+	bool VerifInvitMode();
+	bool VerifInvited(const int user);
 
 	/*Getter*/
 	std::vector<int> getUsers() const;
 	/*Setter*/
 	void addUser(const int user);
+	void addInvited(const int user);
+	void removeInvited(const int user);
 	void deleteUser(const int user);
 	void setUserLimit(const int limit);
 	void setChannelPass(const std::string password);
+	void setInvitationMode(const std::string option);
 };

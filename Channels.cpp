@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/15 17:44:15 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/16 15:07:02 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,21 @@ bool Channels::VerifUser(int userFd)
 	return false;
 }
 
+bool Channels::VerifInvitMode()
+{
+	return this->_invitMode;
+}
+
+bool Channels::VerifInvited(const int user)
+{
+	for(std::vector<int>::iterator itv = _invited.begin(); itv != _invited.end(); itv++)
+	{
+		if (user == *itv)
+			return true;
+	}
+	return false;
+}
+
 /*Getter*/
 std::vector<int> Channels::getUsers() const
 {
@@ -63,8 +78,34 @@ std::vector<int> Channels::getUsers() const
 /*Setter*/
 void Channels::addUser(const int user)
 {
-	if (!VerifUser(user))
+	if (!VerifUser(user) && !VerifInvitMode())
 		_user.push_back(user);
+	else if (!VerifUser(user) && VerifInvitMode())
+	{
+		if (VerifInvited(user))
+		{
+			_user.push_back(user);
+			removeInvited(user);
+		}
+		else
+		{
+			std::string message = "this channel is on invitationand you're has no invitation";
+			send(user, message.c_str(), message.size(), 0);
+		}
+	}
+	
+}
+
+void Channels::addInvited(const int user)
+{
+	if (!VerifInvitMode() || !VerifInvited(user))
+		return;
+	this->_invited.push_back(user);
+}
+
+void Channels::removeInvited(const int user)
+{
+	_invited.erase(std::remove(_invited.begin(), _invited.end(), user), _invited.end());
 }
 
 void Channels::deleteUser(const int user)
@@ -92,4 +133,34 @@ void Channels::setChannelPass(const std::string password)
 	this->_channelPass = password;
 	std::cout << "New pass: " << this->_channelPass << std::endl;
 	std::cout << "Password set for channel " << this->_channelName << std::endl;
+}
+
+void Channels::setInvitationMode(const std::string option)
+{
+	if (option == "+i")
+	{
+		if (_invitMode)
+		{
+			std::cout << "channel already set on ivitation mode" << std::endl;
+			return;
+		}
+		else
+		{
+			this->_invitMode = true;
+			std::cout << this->_channelName << " is now on invitation mode" << std::endl;
+		}
+	}
+	else if (option == "-i")
+	{
+		if (_invitMode == false)
+		{
+			std::cout << "channel is not on ivitation mode" << std::endl;
+			return;
+		}
+		else
+		{
+			this->_invitMode = false;
+			std::cout << this->_channelName << " invitation mode desactivated" << std::endl;
+		}
+	}
 }
