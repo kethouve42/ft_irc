@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channels.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
+/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/16 15:07:02 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/20 19:18:29 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,10 +21,12 @@ Channels::Channels(std::string name, int fdCreator)
 	this->_admins.push_back(fdCreator);
 	this->_user.push_back(fdCreator);
 	_invitMode = false;
+	_restrictedTopic = false;
 }
 
 Channels::~Channels(){}
 
+/* Envoie un message a tout les users du canal, sauf l'envoyeur */
 void Channels::sendMessage(std::string message, int sender)
 {
 	for (std::vector<int>::iterator itv = _user.begin(); itv != _user.end(); itv++)
@@ -34,6 +36,7 @@ void Channels::sendMessage(std::string message, int sender)
 	}
 }
 
+/* Verifie si le user est admin sur le canal */
 bool Channels::VerifAdmin(int userFd)
 {
 	for(std::vector<int>::iterator itv = _admins.begin(); itv != _admins.end(); itv++)
@@ -44,6 +47,7 @@ bool Channels::VerifAdmin(int userFd)
 	return false;
 }
 
+/* Verifie si le user est deja present sur le canal */
 bool Channels::VerifUser(int userFd)
 {
 	for(std::vector<int>::iterator itv = _user.begin(); itv != _user.end(); itv++)
@@ -54,11 +58,7 @@ bool Channels::VerifUser(int userFd)
 	return false;
 }
 
-bool Channels::VerifInvitMode()
-{
-	return this->_invitMode;
-}
-
+/* Verifie si le user est sur la liste d'invitation du canal */
 bool Channels::VerifInvited(const int user)
 {
 	for(std::vector<int>::iterator itv = _invited.begin(); itv != _invited.end(); itv++)
@@ -69,13 +69,22 @@ bool Channels::VerifInvited(const int user)
 	return false;
 }
 
-/*Getter*/
+bool Channels::VerifInvitMode()
+{
+	return this->_invitMode;
+}
+
 std::vector<int> Channels::getUsers() const
 {
 	return this->_user;
 }
 
-/*Setter*/
+std::string Channels::getTopic() const
+{
+	return this->_channelTopic;
+}
+
+/* Ajoute le user au canal */
 void Channels::addUser(const int user)
 {
 	if (!VerifUser(user) && !VerifInvitMode())
@@ -89,25 +98,34 @@ void Channels::addUser(const int user)
 		}
 		else
 		{
-			std::string message = "this channel is on invitationand you're has no invitation";
+			std::string message = "this channel is on invitation and you don't have an invitation";
 			send(user, message.c_str(), message.size(), 0);
+			return ;
 		}
 	}
-	
+	else
+	{
+			std::string message = "You are already in this channel";
+			send(user, message.c_str(), message.size(), 0);
+	}
 }
 
+/* Ajoute le user sur liste d'invitation */
 void Channels::addInvited(const int user)
 {
-	if (!VerifInvitMode() || !VerifInvited(user))
+	if (!VerifInvitMode() || !VerifInvited(user)) // et si il est deja dans le serv ?
 		return;
 	this->_invited.push_back(user);
 }
 
+/* Supprime le user de la liste d'invitation */
 void Channels::removeInvited(const int user)
 {
-	_invited.erase(std::remove(_invited.begin(), _invited.end(), user), _invited.end());
+	if (VerifInvited(user))
+		_invited.erase(std::remove(_invited.begin(), _invited.end(), user), _invited.end());
 }
 
+/* Supprime le user du canal */
 void Channels::deleteUser(const int user)
 {
 	if (VerifUser(user))
@@ -116,16 +134,25 @@ void Channels::deleteUser(const int user)
 		_user.erase(std::remove(_admins.begin(), _admins.end(), user), _admins.end());
 }
 
+/* Passe le user en admin du canal */
 void Channels::addAdmin(int userFd)
 {
 	if (!VerifAdmin(userFd))
 		_admins.push_back(userFd);
 }
 
+
+/* Setters */
 void Channels::setUserLimit(const int limit)
 {
 	this->_userLimit = limit;
 	std::cout << this->_channelName << " new user limit is " << this->_userLimit << std::endl;
+}
+
+void Channels::setTopic(const std::string newTopic)
+{
+	this->_channelTopic = newTopic;
+	std::cout << this->_channelName << " new topic is " << this->_channelTopic << std::endl;
 }
 
 void Channels::setChannelPass(const std::string password)

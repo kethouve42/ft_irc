@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channels.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
+/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/16 14:33:42 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/20 18:57:49 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,11 +21,13 @@ class Channels
 private:
 	std::string 		_channelName;
 	std::string 		_channelPass;
+	std::string			_channelTopic;
 	std::vector<int> 	_user;
 	std::vector<int> 	_admins;
 	std::vector<int>	_invited;
 	int					_userLimit;
 	bool				_invitMode;
+	bool				_restrictedTopic;
 public:
 	Channels();
 	Channels(std::string name, int fdCreator);
@@ -36,14 +38,13 @@ public:
 	bool VerifUser(int userFd);
 	bool VerifInvitMode();
 	bool VerifInvited(const int user);
-
-	/*Getter*/
 	std::vector<int> getUsers() const;
-	/*Setter*/
+	std::string getTopic() const;
 	void addUser(const int user);
 	void addInvited(const int user);
 	void removeInvited(const int user);
 	void deleteUser(const int user);
+	void setTopic(const std::string newTopic);
 	void setUserLimit(const int limit);
 	void setChannelPass(const std::string password);
 	void setInvitationMode(const std::string option);
