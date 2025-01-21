@@ -113,7 +113,7 @@ void Channels::addUser(const int user)
 /* Ajoute le user sur liste d'invitation */
 void Channels::addInvited(const int user)
 {
-	if (!VerifInvitMode() || !VerifInvited(user)) // et si il est deja dans le serv ?
+	if (!VerifInvitMode() || !VerifInvited(user) || VerifUser(user)) // et si il est deja dans le serv ?
 		return;
 	this->_invited.push_back(user);
 }
@@ -132,6 +132,8 @@ void Channels::deleteUser(const int user)
 		_user.erase(std::remove(_user.begin(), _user.end(), user), _user.end());
 	if (VerifAdmin(user))
 		_user.erase(std::remove(_admins.begin(), _admins.end(), user), _admins.end());
+	if (VerifInvited(user))
+		_user.erase(std::remove(_invited.begin(), _invited.end(), user), _invited.end());
 }
 
 /* Passe le user en admin du canal */

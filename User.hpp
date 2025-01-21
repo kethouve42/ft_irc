@@ -20,7 +20,9 @@ private:
 	int 		_userFd;
 	std::string _nickName;
 	std::string _username;
+	std::string _Realname;
 public:
+	bool is_user;
 	User();
 	User(int fd);
 	~User();
@@ -28,7 +30,9 @@ public:
 	/*Getter*/
 	int	getUserFd() const;
 	std::string	getUserNickName() const;
+	std::string	getUserRealname() const;
 	/*Setter*/
 	void setUserNickName(const std::string name);
 	void setUserName(const std::string username);
+	void setUserRealname(const std::string username);
 };

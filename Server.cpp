@@ -259,13 +259,13 @@ void Server::serverLoop()
                     memset(buffer, 0, BUFFER_SIZE);
                     int bytesReceived = recv(pollFds[i].fd, buffer, BUFFER_SIZE, 0);
                     std::string message(buffer);
+                    std::cout << message;
                     std::string salon;
                     std::string temp;
                     std::string msgContent;
                     std::ostringstream ss;
                     ss << pollFds[i].fd;
                     std::string userfd = ss.str();
-
 					// Si message vide, déconnection
                     if (bytesReceived <= 0)
                     {
@@ -276,91 +276,155 @@ void Server::serverLoop()
                         --i; // Ajuster l'index après suppression
 						continue;
                     }
-                    if (message.find("PRIVMSG") == 0)
-                    {
-                        std::cout << "PRIVMSG\n";
-                        size_t pos = message.find(" ");
-                        if (pos != std::string::npos)
+                    if (_user[pollFds[i].fd].is_user == false)
+                    {/*
+                        if (message.find("CAP") == 0)
+                            continue;
+                        else if (message.find("PASS") == 0)
                         {
-                            temp = message.substr(8, pos - 8);
-                            size_t pos = temp.find(" ");
-                            salon = temp.substr(0, pos);
-                            msgContent = temp.substr(pos + 1);
-                            std::cout << "msg : " << msgContent << "salon :" << salon << "\n";
+                            std::string userPass = message.substr(5);
+                            userPass.erase(userPass.find_last_not_of(" \t\n\r") + 1);
+                            if (_serverPass == userPass)
+                                pass = true;
+                            else
+                                destroy_user(pollFds[i].fd);
                         }
-                        if (salon[0] == '#')
+                        else if (message.find("USER") == 0)
                         {
+                            std::string username;
+                            std::string hostname;
+                            std::string servername;
+                            std::string realname;
+
+                            size_t start = 5;
+                            size_t pos = message.find(" ", start);
+                            if (pos != std::string::npos)
+                            {
+                                username = message.substr(start, pos - start);
+                                start = pos + 1;
+
+                                pos = message.find(" ", start);
+                                if (pos != std::string::npos)
+                                {
+                                    hostname = message.substr(start, pos - start);
+                                    start = pos + 1;
+
+                                    pos = message.find(" ", start);
+                                    if (pos != std::string::npos)
+                                    {
+                                        servername = message.substr(start, pos - start);
+                                        start = pos + 1;
+                                        realname = message.substr(start);
+                                    }
+                                }
+                            }
+                            if (realname != NULL)
+                            {
+                                _user[pollFds[i].fd].setUserRealname(realname);
+                                _user[pollFds[i].fd].setUserName(username);
+                                user = true;
+                            }
+                        }
+
+                        else if (message.find("NICK") == 0)
+                        {
+                            std::string userNickName = message.substr(5);
+                            userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
+                            _user[pollFds[i].fd].setUserNickName(userNickName);
+                        }
+                        if (user == true && nick == true && pass == false)
+                            destroy_user(pollFds[i].fd);
+                        if (user == true && nick == true && pass == true)
+                            _user[pollFds[i].fd].is_user == true;*/
+                    }
+                    else
+                    {
+                        if (message.find("PRIVMSG") == 0)
+                        {
+                            std::cout << "PRIVMSG\n";
+                            size_t pos = message.find(" ");
+                            if (pos != std::string::npos)
+                            {
+                                temp = message.substr(8, pos - 8);
+                                size_t pos = temp.find(" ");
+                                salon = temp.substr(0, pos);
+                                msgContent = temp.substr(pos + 1);
+                                std::cout << "msg : " << msgContent << "salon :" << salon << "\n";
+                            }
+                            if (salon[0] == '#')
+                            {
+                                std::ostringstream broadcastStream;
+                                broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << msgContent;
+                                std::string broadcastMessage = broadcastStream.str();
+                                _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd);
+                            }
+                            else
+                            {
+                                std::ostringstream broadcastStream;
+                                broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << msgContent;
+                                std::string broadcastMessage = broadcastStream.str();
+                                int userfd;
+                                std::istringstream ss(salon);
+                                ss >> userfd;
+                                if (ss.fail())
+                                {
+                                    bool userFound = false;
+                                    for (std::map<int, User>::iterator it = _user.begin(); it != _user.end(); ++it)
+                                    {
+                                        if (it->second.getUserNickName() == salon)
+                                        {
+                                            userfd = it->first;
+                                            userFound = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!userFound)
+                                    {
+                                        std::cerr << "Utilisateur avec nickname ou ID " << salon << " introuvable.\n";
+                                        continue;
+                                    }
+                                }
+                                send(userfd, broadcastMessage.c_str(), broadcastMessage.size(), 0);
+                            }
+                        }
+
+                        else if (message.find("JOIN") == 0)
+                        {
+                            join(message, pollFds[i].fd);
+                        }
+                        else if (message.find("KICK") == 0)
+                        {
+                            kick(message, pollFds[i].fd);
+                        }
+                        else if (message.find("NICK") == 0)
+                        {
+                            std::string userNickName = message.substr(5);
+                            userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
+                            _user[pollFds[i].fd].setUserNickName(userNickName);
+                        }
+                        else if (message.find("TOPIC") == 0)
+                        {
+                            topic(message, pollFds[i].fd);
+                        }
+                        /*
+                        else if (message.find("INVITE") == 0)
+                        {
+                        }*/
+                        /*else if (message.find("MODE") == 0)
+                        {
+                        }*/
+                        
+                        else
+                        {
+                            salon = "#general";
+                            //std::cout << "test msg envoyer\n";
+                            //std::cout << "salon: " << salon << std::endl;
+                            //std::cout << "Message reçu de " << pollFds[i].fd << ": " << message << "\n";
                             std::ostringstream broadcastStream;
-                            broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << msgContent;
+                            broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
                             std::string broadcastMessage = broadcastStream.str();
                             _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd);
                         }
-                        else
-                        {
-                            std::ostringstream broadcastStream;
-                            broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << msgContent;
-                            std::string broadcastMessage = broadcastStream.str();
-                            int userfd;
-                            std::istringstream ss(salon);
-                            ss >> userfd;
-                            if (ss.fail())
-                            {
-                                bool userFound = false;
-                                for (std::map<int, User>::iterator it = _user.begin(); it != _user.end(); ++it)
-                                {
-                                    if (it->second.getUserNickName() == salon)
-                                    {
-                                        userfd = it->first;
-                                        userFound = true;
-                                        break;
-                                    }
-                                }
-                                if (!userFound)
-                                {
-                                    std::cerr << "Utilisateur avec nickname ou ID " << salon << " introuvable.\n";
-                                    continue;
-                                }
-                            }
-                            send(userfd, broadcastMessage.c_str(), broadcastMessage.size(), 0);
-                        }
-                    }
-
-                    else if (message.find("JOIN") == 0)
-                    {
-                        join(message, pollFds[i].fd);
-                    }
-                    else if (message.find("KICK") == 0)
-                    {
-                        kick(message, pollFds[i].fd);
-                    }
-                    else if (message.find("NICK") == 0)
-                    {
-                        std::string userNickName = message.substr(5);
-                        userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
-                        _user[pollFds[i].fd].setUserNickName(userNickName);
-                    }
-                    else if (message.find("TOPIC") == 0)
-                    {
-                        topic(message, pollFds[i].fd);
-                    }
-					/*
-                    else if (message.find("INVITE") == 0)
-                    {
-                    }*/
-                    /*else if (message.find("MODE") == 0)
-                    {
-                    }*/
-                    
-                    else
-                    {
-						salon = "#general";
-                        //std::cout << "test msg envoyer\n";
-						//std::cout << "salon: " << salon << std::endl;
-                        //std::cout << "Message reçu de " << pollFds[i].fd << ": " << message << "\n";
-                        std::ostringstream broadcastStream;
-                        broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
-                        std::string broadcastMessage = broadcastStream.str();
-                        _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd);
                     }
                 }
             }

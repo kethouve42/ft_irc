@@ -13,7 +13,9 @@
 #include "User.hpp"
 
 User::User()
-{}
+{
+	is_user = true;
+}
 
 User::User(int fd)
 {
@@ -21,6 +23,7 @@ User::User(int fd)
 	_userFd = fd;
 	oss << fd;
 	_nickName = oss.str();
+	is_user = true;
 }
 
 User::~User(){}
@@ -36,6 +39,11 @@ std::string	User::getUserNickName() const
 	return (this->_nickName);
 }
 
+std::string	User::getUserRealname() const
+{
+	return (this->_Realname);
+}
+
 /*Setter*/
 
 void User::setUserNickName(const std::string name)
@@ -46,4 +54,9 @@ void User::setUserNickName(const std::string name)
 void User::setUserName(const std::string username)
 {
 	this->_username = username;
+}
+
+void User::setUserRealname(const std::string Realname)
+{
+	this->_Realname = Realname;
 }
