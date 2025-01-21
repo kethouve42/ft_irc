@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/20 19:18:29 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/21 18:51:11 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,21 +69,6 @@ bool Channels::VerifInvited(const int user)
 	return false;
 }
 
-bool Channels::VerifInvitMode()
-{
-	return this->_invitMode;
-}
-
-std::vector<int> Channels::getUsers() const
-{
-	return this->_user;
-}
-
-std::string Channels::getTopic() const
-{
-	return this->_channelTopic;
-}
-
 /* Ajoute le user au canal */
 void Channels::addUser(const int user)
 {
@@ -141,8 +126,30 @@ void Channels::addAdmin(int userFd)
 {
 	if (!VerifAdmin(userFd))
 		_admins.push_back(userFd);
+	else
+		std::cout << "user already admin" << std::endl;
 }
 
+/* Getters */
+bool Channels::VerifInvitMode()
+{
+	return this->_invitMode;
+}
+
+bool Channels::getRestrictedTopic()
+{
+	return this->_restrictedTopic;
+}
+
+std::vector<int> Channels::getUsers() const
+{
+	return this->_user;
+}
+
+std::string Channels::getTopic() const
+{
+	return this->_channelTopic;
+}
 
 /* Setters */
 void Channels::setUserLimit(const int limit)
@@ -160,8 +167,15 @@ void Channels::setTopic(const std::string newTopic)
 void Channels::setChannelPass(const std::string password)
 {
 	this->_channelPass = password;
-	std::cout << "New pass: " << this->_channelPass << std::endl;
-	std::cout << "Password set for channel " << this->_channelName << std::endl;
+	if (!password.empty())
+	{
+		std::cout << "New pass: " << this->_channelPass << std::endl;
+		std::cout << "Password '" << password << "' set for channel '" << this->_channelName << "'" << std::endl;
+	}
+	else
+	{
+		std::cout << "Channel '" << this->_channelName << "' has no password"<< std::endl;
+	}
 }
 
 void Channels::setInvitationMode(const std::string option)
@@ -190,6 +204,36 @@ void Channels::setInvitationMode(const std::string option)
 		{
 			this->_invitMode = false;
 			std::cout << this->_channelName << " invitation mode desactivated" << std::endl;
+		}
+	}
+}
+
+void Channels::setRestrictedTopic(const std::string option)
+{
+	if (option == "+t")
+	{
+		if (_invitMode)
+		{
+			std::cout << "topic already set on admin only" << std::endl;
+			return;
+		}
+		else
+		{
+			this->_invitMode = true;
+			std::cout << this->_channelName << " topic is now on admin only" << std::endl;
+		}
+	}
+	else if (option == "-t")
+	{
+		if (_invitMode == false)
+		{
+			std::cout << "topic is already not on admin only" << std::endl;
+			return;
+		}
+		else
+		{
+			this->_invitMode = false;
+			std::cout << this->_channelName << " topic can be change by everyone now" << std::endl;
 		}
 	}
 }

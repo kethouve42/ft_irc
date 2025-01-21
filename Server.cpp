@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/20 19:57:12 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/21 18:47:29 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,7 +148,6 @@ void Server::kick(std::string message, int user)
     }  
 }
 
-/* ============ EN COURS ==================*/
 /* Afficher ou changer le sujet d'un salon */
 void Server::topic(std::string message, int user)
 {
@@ -156,23 +155,26 @@ void Server::topic(std::string message, int user)
 	std::string newTopic;
     std::string salon;
 
-	size_t pos = message.find(" ");
+    message.erase(0, message.find_first_not_of(" \t\n\r"));
+    message.erase(message.find_last_not_of(" \t\n\r") + 1);
 
-    /*
-    Probleme de parsing
-    Fonctionne as avec TOPIC serv, si pas suivi d'un espace
-    garde le \n dans le nom du salon
-    */
+    size_t pos = message.find(" ");
     if (pos != std::string::npos)
     {
         std::string temp = message.substr(pos + 1);
-        size_t pos = temp.find(" ");
-        salon = temp.substr(0, pos);
-        newTopic = temp.substr(pos + 1);
-    }
-    newTopic.erase(newTopic.find_last_not_of(" \t\n\r") + 1);
 
-    std::cout << "Dans " << salon << ", demande de '" << newTopic << "'\n";
+        temp.erase(0, temp.find_first_not_of(" \t\n\r"));
+        temp.erase(temp.find_last_not_of(" \t\n\r") + 1);
+
+        size_t spacePos = temp.find(" ");
+        salon = temp.substr(0, spacePos);
+
+        if (spacePos != std::string::npos)
+        {
+            newTopic = temp.substr(spacePos + 1);
+            newTopic.erase(newTopic.find_last_not_of(" \t\n\r") + 1);
+        }
+    }
 
     if (_channels.find(salon) == _channels.end())
     {
@@ -180,10 +182,9 @@ void Server::topic(std::string message, int user)
         return;
     }
 
-    newTopic.erase(newTopic.find_last_not_of(" \t\n\r") + 1);
     if (newTopic.empty() && !_channels[salon].getTopic().empty())
     {
-        std::string topicMessage = BLUE + ":server " + RESET + "TOPIC of " + salon + " :" + _channels[salon].getTopic() + "\n";
+        std::string topicMessage = BLUE + ":server " + RESET + "TOPIC of " + salon + " : " + _channels[salon].getTopic() + "\n";
         send(user, topicMessage.c_str(), topicMessage.size(), 0);
     }
     else if (newTopic.empty() && _channels[salon].getTopic().empty())
@@ -191,12 +192,116 @@ void Server::topic(std::string message, int user)
         std::string noTopic = BLUE + ":server " + RESET + salon + " n'a pas encore de topic\n";
         send(user, noTopic.c_str(), noTopic.size(), 0);
     }
+    else if (_channels[salon].getRestrictedTopic() && !_channels[salon].VerifAdmin(user))
+    {
+        std::string notAdmin = RED + ":server " + RESET + salon + " no permission for change topic\n";
+        send(user, notAdmin.c_str(), notAdmin.size(), 0);
+    }
+    else if (_channels[salon].VerifInvitMode() && !_channels[salon].VerifUser(user))
+    {
+        std::string notMember = RED + ":server " + RESET + salon + " topic avaliable only to members\n";
+        send(user, notMember.c_str(), notMember.size(), 0);
+    }
     else
     {
         _channels[salon].setTopic(newTopic);
 
         std::string newTopicMessage = BLUE + ":server " + RESET + "New topic on " + salon + " : " + newTopic + "\n";
         _channels[salon].sendMessage(newTopicMessage, user);
+    }
+}
+
+/* Change les parametres du salon */
+void Server::mode(std::string message, int user)
+{
+    (void)user;
+    std::cout << "MODE\n";
+	std::string commande;
+    std::string salon;
+    std::string param;
+
+    message.erase(0, message.find_first_not_of(" \t\n\r"));
+    message.erase(message.find_last_not_of(" \t\n\r") + 1);
+    
+    size_t pos = message.find(" ");
+    if (pos != std::string::npos)
+    {
+        std::string temp = message.substr(pos + 1);
+        temp.erase(0, temp.find_first_not_of(" \t\n\r"));
+        temp.erase(temp.find_last_not_of(" \t\n\r") + 1);
+
+        size_t spacePos = temp.find(" ");
+        salon = temp.substr(0, spacePos);
+    
+        if (spacePos != std::string::npos)
+        {
+            std::string rest = temp.substr(spacePos + 1);
+            rest.erase(0, rest.find_first_not_of(" \t\n\r"));
+            rest.erase(rest.find_last_not_of(" \t\n\r") + 1);
+    
+            size_t secondSpacePos = rest.find(" ");
+            commande = rest.substr(0, secondSpacePos);
+    
+            if (secondSpacePos != std::string::npos)
+            {
+                param = rest.substr(secondSpacePos + 1);
+                param.erase(0, param.find_first_not_of(" \t\n\r"));
+                param.erase(param.find_last_not_of(" \t\n\r") + 1);
+            }
+        }
+    }
+    // Debug : Afficher les parties extraites
+    std::cout << "Salon : '" << salon << "'\n";
+    std::cout << "Commande : '" << commande << "'\n";
+    std::cout << "Paramètre : '" << param << "'\n";
+
+    if (_channels.find(salon) == _channels.end())
+    {
+        std::cout << "Le salon " << salon << " n'existe pas" << std::endl;
+        return;
+    } 
+    else if (!_channels[salon].VerifAdmin(user))
+    {
+        std::string notAdmin = RED + ":server " + RESET + salon + " only admins can use MODE (so you're not)\n";
+        send(user, notAdmin.c_str(), notAdmin.size(), 0);
+        return;
+    }
+
+    if (commande == "+i" || commande == "-i")
+    {
+        _channels[salon].setInvitationMode(commande);
+    }
+    else if (commande == "+t" || commande == "-t")
+    {
+        _channels[salon].setRestrictedTopic(commande);
+    }
+    else if (commande == "+k" && !param.empty())
+    {
+        _channels[salon].setChannelPass(param);
+    }
+    else if (commande == "-k")
+    {
+        _channels[salon].setChannelPass("");
+    }
+    else if (commande == "+o" || commande == "-o")
+    {
+        // refaire fonctions admin dans channels
+    }
+    else if (commande == "+l" && !param.empty())
+    {
+        std::stringstream ss(param);
+        int value;
+        ss >> value;
+        if (ss.fail())
+        {
+            std::cerr << "Error value." << std::endl;
+        }
+        else if (value > 0)
+            _channels[salon].setUserLimit(value);
+    }
+    else if (commande == "-l")
+    {
+        _channels[salon].setUserLimit(INT_MAX);
     }
 }
 
@@ -410,9 +515,10 @@ void Server::serverLoop()
                         else if (message.find("INVITE") == 0)
                         {
                         }*/
-                        /*else if (message.find("MODE") == 0)
+                        else if (message.find("MODE") == 0)
                         {
-                        }*/
+                            mode(message, pollFds[i].fd);
+                        }
                         
                         else
                         {

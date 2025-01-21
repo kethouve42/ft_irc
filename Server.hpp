@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/20 19:03:31 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/21 18:42:17 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,4 +65,5 @@ class Server
 		void	join(std::string message, int user);
 		void	kick(std::string message, int user);
 		void	topic(std::string message, int user);
+		void	mode(std::string message, int user);
 };
