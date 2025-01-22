@@ -66,4 +66,5 @@ class Server
 		void	kick(std::string message, int user);
 		void	topic(std::string message, int user);
 		void	mode(std::string message, int user);
+		void	destroyUser(const int user);
 };

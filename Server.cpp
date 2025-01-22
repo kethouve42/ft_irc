@@ -382,7 +382,7 @@ void Server::serverLoop()
 						continue;
                     }
                     if (_user[pollFds[i].fd].is_user == false)
-                    {/*
+                    {
                         if (message.find("CAP") == 0)
                             continue;
                         else if (message.find("PASS") == 0)
@@ -392,7 +392,7 @@ void Server::serverLoop()
                             if (_serverPass == userPass)
                                 pass = true;
                             else
-                                destroy_user(pollFds[i].fd);
+                                destroyUser(pollFds[i].fd);
                         }
                         else if (message.find("USER") == 0)
                         {
@@ -438,9 +438,9 @@ void Server::serverLoop()
                             _user[pollFds[i].fd].setUserNickName(userNickName);
                         }
                         if (user == true && nick == true && pass == false)
-                            destroy_user(pollFds[i].fd);
+                            destroyUser(pollFds[i].fd);
                         if (user == true && nick == true && pass == true)
-                            _user[pollFds[i].fd].is_user == true;*/
+                            _user[pollFds[i].fd].is_user == true;
                     }
                     else
                     {
