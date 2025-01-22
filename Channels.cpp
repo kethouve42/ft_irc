@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/21 18:51:11 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/22 19:09:42 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,8 @@ bool Channels::VerifInvited(const int user)
 	return false;
 }
 
+#pragma region Add/Remove
+
 /* Ajoute le user au canal */
 void Channels::addUser(const int user)
 {
@@ -83,14 +85,14 @@ void Channels::addUser(const int user)
 		}
 		else
 		{
-			std::string message = "this channel is on invitation and you don't have an invitation";
+			std::string message = "this channel is on invitation and you don't have an invitation\n";
 			send(user, message.c_str(), message.size(), 0);
 			return ;
 		}
 	}
 	else
 	{
-			std::string message = "You are already in this channel";
+			std::string message = "You are already in this channel\n";
 			send(user, message.c_str(), message.size(), 0);
 	}
 }
@@ -98,9 +100,29 @@ void Channels::addUser(const int user)
 /* Ajoute le user sur liste d'invitation */
 void Channels::addInvited(const int user)
 {
-	if (!VerifInvitMode() || !VerifInvited(user) || VerifUser(user)) // et si il est deja dans le serv ?
+	if (!VerifInvitMode() || VerifInvited(user) || VerifUser(user))
+	{
+		std::cout << "error inviting :\nInvite mode = " << VerifInvitMode() << " \nVerifInvited = " << VerifInvited(user) << " \nVerifUser = " << VerifUser(user) << std::endl;
 		return;
+	}
+	
 	this->_invited.push_back(user);
+	
+	std::string invited = ":server Vous avez ete invite sur le salon '" + _channelName + "'\n";
+    send(user, invited.c_str(), invited.size(), 0);
+}
+
+/* Passe le user en admin du canal */
+void Channels::addAdmin(int userFd)
+{
+	if (!VerifAdmin(userFd))
+	{
+		_admins.push_back(userFd);
+		std::string admined = ":server Vous avez ete promu admin sur '" + _channelName + "' !\n";
+    	send(userFd, admined.c_str(), admined.size(), 0);
+	}
+	else
+		std::cout << "user already admin" << std::endl;
 }
 
 /* Supprime le user de la liste d'invitation */
@@ -110,25 +132,27 @@ void Channels::removeInvited(const int user)
 		_invited.erase(std::remove(_invited.begin(), _invited.end(), user), _invited.end());
 }
 
+/* Supprime le user de la liste des admins */
+void Channels::removeAdmin(const int user)
+{
+	if (VerifAdmin(user))
+		_admins.erase(std::remove(_admins.begin(), _admins.end(), user), _admins.end());
+	else
+		std::cout << "user already not admin" << std::endl;
+}
+
 /* Supprime le user du canal */
 void Channels::deleteUser(const int user)
 {
 	if (VerifUser(user))
 		_user.erase(std::remove(_user.begin(), _user.end(), user), _user.end());
-	if (VerifAdmin(user))
-		_user.erase(std::remove(_admins.begin(), _admins.end(), user), _admins.end());
-	if (VerifInvited(user))
-		_user.erase(std::remove(_invited.begin(), _invited.end(), user), _invited.end());
+	removeAdmin(user);
+	removeInvited(user);
 }
 
-/* Passe le user en admin du canal */
-void Channels::addAdmin(int userFd)
-{
-	if (!VerifAdmin(userFd))
-		_admins.push_back(userFd);
-	else
-		std::cout << "user already admin" << std::endl;
-}
+#pragma endregion
+
+#pragma region Getters/Setters
 
 /* Getters */
 bool Channels::VerifInvitMode()
@@ -237,3 +261,5 @@ void Channels::setRestrictedTopic(const std::string option)
 		}
 	}
 }
+
+#pragma endregion

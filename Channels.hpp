@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/21 18:38:07 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/22 17:17:23 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ public:
 	void addUser(const int user);
 	void addInvited(const int user);
 	void removeInvited(const int user);
+	void removeAdmin(const int user);
 	void deleteUser(const int user);
 	void setTopic(const std::string newTopic);
 	void setUserLimit(const int limit);

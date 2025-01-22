@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   User.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
+/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:55:21 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/14 15:37:42 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/22 18:31:53 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ std::string	User::getUserRealname() const
 }
 
 /*Setter*/
-
 void User::setUserNickName(const std::string name)
 {
 	this->_nickName = name;
