@@ -76,6 +76,28 @@ void Server::displayUsers(std::string salon, int sender)
 	send(sender, message.c_str(), message.size(), 0);
 }
 
+void Server::destroyUser(const int user)
+{
+    std::cout << "Client déconnecté : " << user << "\n";
+    for (std::map<std::string, Channels>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    {
+        it->second.deleteUser(user);
+    }
+    if (_user.find(user) != _user.end()) {
+        _user.erase(user);
+    }
+    for (std::vector<pollfd>::iterator it = pollFds.begin(); it != pollFds.end(); ++it)
+    {
+        if (it->fd == user)
+        {
+            pollFds.erase(it);
+            break;
+        }
+    }
+    close(user);
+}
+
+
 /* Ajoute le user au salon */
 void Server::join(std::string message, int user)
 {
@@ -384,7 +406,7 @@ void Server::serverLoop()
 {
 	std::cout << "in loop" << std::endl;
     // 6. Utiliser poll() pour surveiller les clients
-    std::vector<pollfd> pollFds;
+    //std::vector<pollfd> pollFds;
     pollfd serverPollFd;
     serverPollFd.fd = _serverfd;
     serverPollFd.events = POLLIN;
@@ -425,7 +447,6 @@ void Server::serverLoop()
                         pollFds.push_back(clientPollFd); // Ajouter le client
                         User newUser(clientSocket);
                         _user[clientSocket] = newUser;
-                        _channels["#general"].addUser(clientSocket);
                         for (std::map<int, User>::iterator it = _user.begin(); it != _user.end(); ++it)
                         {
                             std::cout << "user :" <<it->second.getUserFd() << "\n";
@@ -449,23 +470,21 @@ void Server::serverLoop()
 					// Si message vide, déconnection
                     if (bytesReceived <= 0)
                     {
-                        std::cout << "Client déconnecté : " << pollFds[i].fd << "\n";
-                        close(pollFds[i].fd);
-                        pollFds.erase(pollFds.begin() + i);
+                        destroyUser(pollFds[i].fd);
                         //_user.erase(std::remove(_user.begin(), _user.end(), userKick), _user.end());    <== SUPPRIMER LE USER
                         --i; // Ajuster l'index après suppression
 						continue;
                     }
                     if (_user[pollFds[i].fd].is_user == false)
                     {
-                        /*if (message.find("CAP") == 0)
+                        if (message.find("CAP") == 0)
                             continue;
                         else if (message.find("PASS") == 0)
                         {
                             std::string userPass = message.substr(5);
                             userPass.erase(userPass.find_last_not_of(" \t\n\r") + 1);
                             if (_serverPass == userPass)
-                                pass = true;
+                                _user[pollFds[i].fd].pass = true;
                             else
                                 destroyUser(pollFds[i].fd);
                         }
@@ -498,11 +517,11 @@ void Server::serverLoop()
                                     }
                                 }
                             }
-                            if (realname != NULL)
+                            if (realname.size() != 0)
                             {
                                 _user[pollFds[i].fd].setUserRealname(realname);
                                 _user[pollFds[i].fd].setUserName(username);
-                                user = true;
+                                _user[pollFds[i].fd].user = true;
                             }
                         }
 
@@ -511,12 +530,18 @@ void Server::serverLoop()
                             std::string userNickName = message.substr(5);
                             userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
                             _user[pollFds[i].fd].setUserNickName(userNickName);
+                            _user[pollFds[i].fd].nick = true;
                         }
-                        if (user == true && nick == true && pass == false)
+                        if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == false)
                             destroyUser(pollFds[i].fd);
-                        if (user == true && nick == true && pass == true)
-                            _user[pollFds[i].fd].is_user == true;
-                    */}
+                        if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == true)
+                        {
+                            _user[pollFds[i].fd].is_user = true;
+                            _channels["#general"].addUser(pollFds[i].fd);
+                        }
+                        else
+                            std::cout <<"user"<< pollFds[i].fd << "nick :" << _user[pollFds[i].fd].nick << " user :" << _user[pollFds[i].fd].user << " pass :" << _user[pollFds[i].fd].pass << " \n";
+                    }
                     else
                     {
                         if (message.find("PRIVMSG") == 0)

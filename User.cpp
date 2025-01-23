@@ -14,7 +14,10 @@
 
 User::User()
 {
-	is_user = true;
+	is_user = false;
+	user = false;
+	nick = false;
+	pass = false;
 }
 
 User::User(int fd)
@@ -23,7 +26,10 @@ User::User(int fd)
 	_userFd = fd;
 	oss << fd;
 	_nickName = oss.str();
-	is_user = true;
+	is_user = false;
+	user = false;
+	nick = false;
+	pass = false;
 }
 
 User::~User(){}

@@ -56,6 +56,7 @@ class Server
 		int			_serverfd;
 		std::map<int, User> _user;
 		std::map<std::string, Channels> _channels;
+		std::vector<pollfd> pollFds;
 		Server();
 	public:
 		Server(int port, std::string pass);

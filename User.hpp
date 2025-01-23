@@ -23,6 +23,9 @@ private:
 	std::string _Realname;
 public:
 	bool is_user;
+	bool user;
+	bool nick;
+	bool pass;
 	User();
 	User(int fd);
 	~User();

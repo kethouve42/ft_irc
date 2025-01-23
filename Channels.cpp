@@ -137,8 +137,8 @@ void Channels::removeAdmin(const int user)
 {
 	if (VerifAdmin(user))
 		_admins.erase(std::remove(_admins.begin(), _admins.end(), user), _admins.end());
-	else
-		std::cout << "user already not admin" << std::endl;
+	//else
+		//std::cout << "user already not admin" << std::endl;
 }
 
 /* Supprime le user du canal */
