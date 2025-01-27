@@ -50,6 +50,11 @@ std::string	User::getUserRealname() const
 	return (this->_Realname);
 }
 
+std::string	User::getUserName() const
+{
+	return (this->_username);
+}
+
 /*Setter*/
 void User::setUserNickName(const std::string name)
 {

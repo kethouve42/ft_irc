@@ -34,6 +34,7 @@ public:
 	int	getUserFd() const;
 	std::string	getUserNickName() const;
 	std::string	getUserRealname() const;
+	std::string	getUserName() const;
 	/*Setter*/
 	void setUserNickName(const std::string name);
 	void setUserName(const std::string username);

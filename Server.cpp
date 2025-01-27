@@ -122,13 +122,16 @@ void Server::join(std::string message, int user)
 		send(user, joinMessage.c_str(), joinMessage.size(), 0);
 		return ;
     }
-
+    std::ostringstream ss;
+    ss << user;
+    std::string userfd = ss.str();
 	// Ajoute l'user au salon
 	_channels[joinSalon].addUser(user);
 
     if (!_channels[joinSalon].VerifUser(user))
         return ;
-
+    //std::string joinMessage = ":Client" + userfd + " JOIN " + joinSalon + "\n";
+    //_channels[joinSalon].sendMessage(joinMessage, user);
     std::string joinMessage = GREEN + ":" + _user[user].getUserNickName() + RESET + " a rejoint '" + joinSalon + "'\n";
 	_channels[joinSalon].sendMessage(joinMessage, user);
 
@@ -460,7 +463,7 @@ void Server::serverLoop()
                     memset(buffer, 0, BUFFER_SIZE);
                     int bytesReceived = recv(pollFds[i].fd, buffer, BUFFER_SIZE, 0);
                     std::string message(buffer);
-                    //std::cout << message;
+                    std::cout << message;
                     std::string salon;
                     std::string temp;
                     std::string msgContent;
@@ -471,7 +474,6 @@ void Server::serverLoop()
                     if (bytesReceived <= 0)
                     {
                         destroyUser(pollFds[i].fd);
-                        //_user.erase(std::remove(_user.begin(), _user.end(), userKick), _user.end());    <== SUPPRIMER LE USER
                         --i; // Ajuster l'index après suppression
 						continue;
                     }
@@ -483,10 +485,20 @@ void Server::serverLoop()
                         {
                             std::string userPass = message.substr(5);
                             userPass.erase(userPass.find_last_not_of(" \t\n\r") + 1);
-                            if (_serverPass == userPass)
-                                _user[pollFds[i].fd].pass = true;
+                            if (userPass[0] == ':')
+                            {
+                                if (":" + _serverPass == userPass)
+                                    _user[pollFds[i].fd].pass = true;
+                                else
+                                    destroyUser(pollFds[i].fd);
+                            }
                             else
-                                destroyUser(pollFds[i].fd);
+                            {
+                                if (_serverPass == userPass)
+                                    _user[pollFds[i].fd].pass = true;
+                                else
+                                    destroyUser(pollFds[i].fd);
+                            }
                         }
                         else if (message.find("USER") == 0)
                         {
