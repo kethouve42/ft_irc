@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/22 17:17:23 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/27 18:17:39 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,16 +36,17 @@ public:
 	void addAdmin(int userFD);
 	bool VerifAdmin(int userFd);
 	bool VerifUser(int userFd);
-	bool VerifInvitMode();
 	bool VerifInvited(const int user);
-	std::vector<int> getUsers() const;
-	std::string getTopic() const;
-	bool getRestrictedTopic();
-	void addUser(const int user);
+	int addUser(const int user);
 	void addInvited(const int user);
 	void removeInvited(const int user);
 	void removeAdmin(const int user);
 	void deleteUser(const int user);
+	std::vector<int> getUsers() const;
+	std::string getTopic() const;
+	int	getUserLimit();
+	bool getRestrictedTopic();
+	bool getInvitMode();
 	void setTopic(const std::string newTopic);
 	void setUserLimit(const int limit);
 	void setChannelPass(const std::string password);

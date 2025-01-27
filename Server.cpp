@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/22 19:17:36 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/27 18:18:04 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,26 +122,28 @@ void Server::join(std::string message, int user)
 		send(user, joinMessage.c_str(), joinMessage.size(), 0);
 		return ;
     }
-    std::ostringstream ss;
-    ss << user;
-    std::string userfd = ss.str();
-	// Ajoute l'user au salon
-	_channels[joinSalon].addUser(user);
 
-    if (!_channels[joinSalon].VerifUser(user))
-        return ;
-    //std::string joinMessage = ":Client" + userfd + " JOIN " + joinSalon + "\n";
-    //_channels[joinSalon].sendMessage(joinMessage, user);
-    std::string joinMessage = GREEN + ":" + _user[user].getUserNickName() + RESET + " a rejoint '" + joinSalon + "'\n";
-	_channels[joinSalon].sendMessage(joinMessage, user);
-
-	std::string welcomeMessage = BLUE + ":server" + RESET + " Bienvenue dans le serveur '" + joinSalon + "'\n";
-	send(user, welcomeMessage.c_str(), welcomeMessage.size(), 0);
-
-    if (_channels[joinSalon].getTopic() != "")
+    if ((int)_channels[joinSalon].getUsers().size() >= _channels[joinSalon].getUserLimit())
     {
-        std::string topicMessage = BLUE + ":server" + RESET + " Topic de '" + joinSalon + "' : " + _channels[joinSalon].getTopic() + "\n";
-	    send(user, topicMessage.c_str(), topicMessage.size(), 0);
+        std::string fullMessage = RED + ":server" + RESET + joinSalon + " is full\n";
+		send(user, fullMessage.c_str(), fullMessage.size(), 0);
+		return ;
+    }
+
+	// Ajoute l'user au salon
+	if (_channels[joinSalon].addUser(user) == 0)
+    {
+        std::string joinMessage = GREEN + ":" + _user[user].getUserNickName() + RESET + " a rejoint '" + joinSalon + "'\n";
+        _channels[joinSalon].sendMessage(joinMessage, user);
+
+        std::string welcomeMessage = BLUE + ":server" + RESET + " Bienvenue dans le serveur '" + joinSalon + "'\n";
+        send(user, welcomeMessage.c_str(), welcomeMessage.size(), 0);
+
+        if (_channels[joinSalon].getTopic() != "")
+        {
+            std::string topicMessage = BLUE + ":server" + RESET + " Topic de '" + joinSalon + "' : " + _channels[joinSalon].getTopic() + "\n";
+            send(user, topicMessage.c_str(), topicMessage.size(), 0);
+        }
     }
 }
 
@@ -182,7 +184,7 @@ void Server::kick(std::string message, int user)
             return;
         }
 	}
-	if (_channels[salon].VerifAdmin(user) && _channels[salon].VerifUser(user))
+	if (_channels[salon].VerifAdmin(user) && userKickName != fdToNickname(user))
 	{
         std::string kickMessage = BLUE + ":server " + RESET + _user[userKick].getUserNickName() + " was kick out of " + salon + "\n";
         _channels[salon].sendMessage(kickMessage, 0);
@@ -195,7 +197,7 @@ void Server::kick(std::string message, int user)
     }
     else
     {
-        std::string notAdmin = RED + ":server " + RESET + "user or channel not found" + "\n";
+        std::string notAdmin = RED + ":server " + RESET + "error" + "\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
     }  
 }
@@ -233,7 +235,7 @@ void Server::topic(std::string message, int user)
         return;
     }
 
-    if (_channels[salon].VerifInvitMode() && !_channels[salon].VerifUser(user))
+    if (_channels[salon].getInvitMode() && !_channels[salon].VerifUser(user))
     {
         std::string notMember = RED + ":server " + RESET + salon + " topic avaliable only to members\n";
         send(user, notMember.c_str(), notMember.size(), 0);
@@ -381,7 +383,7 @@ void Server::mode(std::string message, int user)
         {
             if(commande == "+o")
                 _channels[salon].addAdmin(nicknameToFd(param));
-            else
+            else if (param != fdToNickname(user))
                 _channels[salon].removeAdmin(nicknameToFd(param));
         }
         else
@@ -477,7 +479,7 @@ void Server::serverLoop()
                         --i; // Ajuster l'index après suppression
 						continue;
                     }
-                    if (_user[pollFds[i].fd].is_user == false)
+                    /*if (_user[pollFds[i].fd].is_user == false)
                     {
                         if (message.find("CAP") == 0)
                             continue;
@@ -554,7 +556,7 @@ void Server::serverLoop()
                         else
                             std::cout <<"user"<< pollFds[i].fd << "nick :" << _user[pollFds[i].fd].nick << " user :" << _user[pollFds[i].fd].user << " pass :" << _user[pollFds[i].fd].pass << " \n";
                     }
-                    else
+                    else*/
                     {
                         if (message.find("PRIVMSG") == 0)
                         {
@@ -618,6 +620,7 @@ void Server::serverLoop()
                             std::string userNickName = message.substr(5);
                             userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
                             _user[pollFds[i].fd].setUserNickName(userNickName);
+                            // GERER POUR QU'IL Y AIT PAS DEUX FOIS LE MEME NICKNAME
                         }
                         else if (message.find("TOPIC") == 0)
                         {

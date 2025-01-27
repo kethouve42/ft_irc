@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/22 19:09:42 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/27 18:20:27 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,11 +72,11 @@ bool Channels::VerifInvited(const int user)
 #pragma region Add/Remove
 
 /* Ajoute le user au canal */
-void Channels::addUser(const int user)
+int Channels::addUser(const int user)
 {
-	if (!VerifUser(user) && !VerifInvitMode())
+	if (!VerifUser(user) && !_invitMode)
 		_user.push_back(user);
-	else if (!VerifUser(user) && VerifInvitMode())
+	else if (!VerifUser(user) && _invitMode)
 	{
 		if (VerifInvited(user))
 		{
@@ -87,22 +87,24 @@ void Channels::addUser(const int user)
 		{
 			std::string message = "this channel is on invitation and you don't have an invitation\n";
 			send(user, message.c_str(), message.size(), 0);
-			return ;
+			return 1;
 		}
 	}
 	else
 	{
 			std::string message = "You are already in this channel\n";
 			send(user, message.c_str(), message.size(), 0);
+			return 1;
 	}
+	return 0;
 }
 
 /* Ajoute le user sur liste d'invitation */
 void Channels::addInvited(const int user)
 {
-	if (!VerifInvitMode() || VerifInvited(user) || VerifUser(user))
+	if (!_invitMode || VerifInvited(user) || VerifUser(user))
 	{
-		std::cout << "error inviting :\nInvite mode = " << VerifInvitMode() << " \nVerifInvited = " << VerifInvited(user) << " \nVerifUser = " << VerifUser(user) << std::endl;
+		std::cout << "error inviting :\nInvite mode = " << _invitMode << " \nVerifInvited = " << VerifInvited(user) << " \nVerifUser = " << VerifUser(user) << std::endl;
 		return;
 	}
 	
@@ -155,9 +157,14 @@ void Channels::deleteUser(const int user)
 #pragma region Getters/Setters
 
 /* Getters */
-bool Channels::VerifInvitMode()
+bool Channels::getInvitMode()
 {
 	return this->_invitMode;
+}
+
+int Channels::getUserLimit()
+{
+	return this->_userLimit;
 }
 
 bool Channels::getRestrictedTopic()
@@ -236,27 +243,27 @@ void Channels::setRestrictedTopic(const std::string option)
 {
 	if (option == "+t")
 	{
-		if (_invitMode)
+		if (_restrictedTopic)
 		{
 			std::cout << "topic already set on admin only" << std::endl;
 			return;
 		}
 		else
 		{
-			this->_invitMode = true;
+			this->_restrictedTopic = true;
 			std::cout << this->_channelName << " topic is now on admin only" << std::endl;
 		}
 	}
 	else if (option == "-t")
 	{
-		if (_invitMode == false)
+		if (_restrictedTopic == false)
 		{
 			std::cout << "topic is already not on admin only" << std::endl;
 			return;
 		}
 		else
 		{
-			this->_invitMode = false;
+			this->_restrictedTopic = false;
 			std::cout << this->_channelName << " topic can be change by everyone now" << std::endl;
 		}
 	}
