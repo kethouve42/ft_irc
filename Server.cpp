@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/28 17:40:46 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/28 18:44:50 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -705,4 +705,15 @@ void Server::serverLoop()
 
     // Fermer le serveur
     close(_serverfd);
+}
+
+void Server::clearServ()
+{
+	_channels.clear();
+	_user.clear();
+    pollFds.clear();
+	std::vector<pollfd> empty;
+    pollFds.swap(empty);
+	std::cout << "all channels cleared" << std::endl;
+	close(_serverfd);
 }

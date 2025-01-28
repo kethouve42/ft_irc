@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/28 17:27:16 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/28 18:44:31 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,7 @@ class Server
 		void	quit(std::string message, int user);
 		void	mode(std::string message, int user);
 		void	destroyUser(const int user);
+		void	clearServ();
 		int		nicknameToFd(std::string nick);
 		std::string fdToNickname(int fd);
 		void	displayUsers(std::string salon, int sender);
