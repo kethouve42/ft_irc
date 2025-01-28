@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/27 18:18:04 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/28 17:40:46 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,6 @@ void Server::destroyUser(const int user)
     }
     close(user);
 }
-
 
 /* Ajoute le user au salon */
 void Server::join(std::string message, int user)
@@ -407,6 +406,48 @@ void Server::mode(std::string message, int user)
     }
 }
 
+/* Retire le user du salon */
+void Server::quit(std::string message, int user)
+{
+    std::string quitSalon = message.substr(5);
+    quitSalon.erase(quitSalon.find_last_not_of(" \t\n\r") + 1);
+
+    if (quitSalon.empty())
+    {
+        std::string errMessage = RED + ":server" + RESET + " Pas assez de paramètres.\n";
+        send(user, errMessage.c_str(), errMessage.size(), 0);
+        return ;
+    }
+
+    if (_channels.find(quitSalon) == _channels.end())
+    {
+        std::cout << "Le salon " << quitSalon << " n'existe pas" << std::endl;
+        return;
+    }
+
+    if (_channels[quitSalon].VerifAdmin(user))
+    {
+        if (_channels[quitSalon].getAdmins().size() <= 1 && _channels[quitSalon].getUsers().size() > 1)
+        {
+            std::string errMessage = RED + ":server" + RESET + " Il semble que vous etes le seul admin du serveur.\n\t Promouvez un autre membre avec 'MODE " + quitSalon + " +o user' avant de partir\n";
+            send(user, errMessage.c_str(), errMessage.size(), 0);
+            return ;
+        }
+    }
+
+    _channels[quitSalon].deleteUser(user);
+
+    /////////////////////////////////////////
+
+    // FAUT SUPPRIMER LE SALON LE DERNIER MEMBRE EST PARTI !!!!!!!
+
+    /////////////////////////////////////////
+
+    std::string quitMessage = BLUE + ":server " + RESET + fdToNickname(user) + " a quitte le salon '" + quitSalon + "'\n";
+    _channels[quitSalon].sendMessage(quitMessage, user);
+    return;
+}
+
 void Server::serverLoop()
 {
 	std::cout << "in loop" << std::endl;
@@ -633,6 +674,10 @@ void Server::serverLoop()
                         else if (message.find("MODE") == 0)
                         {
                             mode(message, pollFds[i].fd);
+                        }
+                        else if (message.find("QUIT") == 0)
+                        {
+                            quit(message, pollFds[i].fd);
                         }
                         else if (message.find("USER") == 0) // <== DEBUG
                         {

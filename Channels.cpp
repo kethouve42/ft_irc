@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/27 18:20:27 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/01/28 17:21:06 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,10 +146,10 @@ void Channels::removeAdmin(const int user)
 /* Supprime le user du canal */
 void Channels::deleteUser(const int user)
 {
-	if (VerifUser(user))
-		_user.erase(std::remove(_user.begin(), _user.end(), user), _user.end());
 	removeAdmin(user);
 	removeInvited(user);
+	if (VerifUser(user))
+		_user.erase(std::remove(_user.begin(), _user.end(), user), _user.end());
 }
 
 #pragma endregion
@@ -175,6 +175,11 @@ bool Channels::getRestrictedTopic()
 std::vector<int> Channels::getUsers() const
 {
 	return this->_user;
+}
+
+std::vector<int> Channels::getAdmins() const
+{
+	return this->_admins;
 }
 
 std::string Channels::getTopic() const
