@@ -103,48 +103,73 @@ void Server::join(std::string message, int user)
     std::string joinSalon = message.substr(5);
     joinSalon.erase(joinSalon.find_last_not_of(" \t\n\r") + 1);
 
+    std::string nickname = _user[user].getUserNickName();
+
     // Salon vide
     if (joinSalon.empty())
     {
-        std::string errMessage = RED + ":server" + RESET + " Pas assez de paramètres.\n";
+        std::cout << "table" << std::endl;
+        std::string errMessage = ":server 461 " + nickname + " JOIN :Not enough parameters\r\n";
         send(user, errMessage.c_str(), errMessage.size(), 0);
-        return ;
+        return;
     }
 
-	// Creation de salon
+    // Création de salon
     if (_channels.find(joinSalon) == _channels.end())
     {
-		std::cout << "salon " << joinSalon << " created" << std::endl;
+        std::cout << "Salon " << joinSalon << " créé" << std::endl;
         Channels nouveauSalon(joinSalon, user);
         _channels[joinSalon] = nouveauSalon;
-		std::string joinMessage = BLUE + ":server" + RESET + " Comme il n'existe pas encore, vous avez cree le salon " + joinSalon + "\n";
-		send(user, joinMessage.c_str(), joinMessage.size(), 0);
-		return ;
+
+        std::string createMessage = ":" + nickname + " JOIN :" + joinSalon + "\r\n";
+        send(user, createMessage.c_str(), createMessage.size(), 0);
     }
 
     if ((int)_channels[joinSalon].getUsers().size() >= _channels[joinSalon].getUserLimit())
     {
-        std::string fullMessage = RED + ":server" + RESET + joinSalon + " is full\n";
-		send(user, fullMessage.c_str(), fullMessage.size(), 0);
-		return ;
+        std::string fullMessage = ":server 471 " + nickname + " " + joinSalon + " :Channel is full\r\n";
+        send(user, fullMessage.c_str(), fullMessage.size(), 0);
+        return;
     }
 
-	// Ajoute l'user au salon
-	if (_channels[joinSalon].addUser(user) == 0)
+    // Ajout de l'utilisateur au salon
+    if (_channels[joinSalon].addUser(user) == 0)
     {
-        std::string joinMessage = GREEN + ":" + _user[user].getUserNickName() + RESET + " a rejoint '" + joinSalon + "'\n";
+        std::string joinMessage = ":" + nickname + " JOIN :" + joinSalon + "\r\n";
+        send(user, joinMessage.c_str(), joinMessage.size(), 0);
         _channels[joinSalon].sendMessage(joinMessage, user);
 
-        std::string welcomeMessage = BLUE + ":server" + RESET + " Bienvenue dans le serveur '" + joinSalon + "'\n";
-        send(user, welcomeMessage.c_str(), welcomeMessage.size(), 0);
+        // Construction de la liste des utilisateurs
+        std::string namesMessage = ":server 353 " + nickname + " = " + joinSalon + " :";
+        std::vector<int> users = _channels[joinSalon].getUsers();
+        std::vector<int>::iterator it;
+        for (it = users.begin(); it != users.end(); ++it)
+        {
+            namesMessage += _user[*it].getUserNickName() + " ";
+        }
+        namesMessage += "\r\n";
 
+        // Fin de la liste des utilisateurs
+        std::string endNamesMessage = ":server 366 " + nickname + " " + joinSalon + " :End of /NAMES list\r\n";
+
+        send(user, namesMessage.c_str(), namesMessage.size(), 0);
+        send(user, endNamesMessage.c_str(), endNamesMessage.size(), 0);
+
+        // Envoi du topic s'il existe
         if (_channels[joinSalon].getTopic() != "")
         {
-            std::string topicMessage = BLUE + ":server" + RESET + " Topic de '" + joinSalon + "' : " + _channels[joinSalon].getTopic() + "\n";
+            std::string topicMessage = ":server 332 " + nickname + " " + joinSalon + " :" + _channels[joinSalon].getTopic() + "\r\n";
             send(user, topicMessage.c_str(), topicMessage.size(), 0);
+        }
+        else
+        {
+            std::string noTopicMessage = ":server 331 " + nickname + " " + joinSalon + " :No topic is set\r\n";
+            send(user, noTopicMessage.c_str(), noTopicMessage.size(), 0);
         }
     }
 }
+
+
 
 /* Retire un user du salon */
 void Server::kick(std::string message, int user)
@@ -520,7 +545,7 @@ void Server::serverLoop()
                         --i; // Ajuster l'index après suppression
 						continue;
                     }
-                    /*if (_user[pollFds[i].fd].is_user == false)
+                    if (_user[pollFds[i].fd].is_user == false)
                     {
                         if (message.find("CAP") == 0)
                             continue;
@@ -597,7 +622,7 @@ void Server::serverLoop()
                         else
                             std::cout <<"user"<< pollFds[i].fd << "nick :" << _user[pollFds[i].fd].nick << " user :" << _user[pollFds[i].fd].user << " pass :" << _user[pollFds[i].fd].pass << " \n";
                     }
-                    else*/
+                    else
                     {
                         if (message.find("PRIVMSG") == 0)
                         {
