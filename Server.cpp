@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/28 18:44:50 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/29 15:49:59 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -483,8 +483,7 @@ void Server::serverLoop()
     serverPollFd.events = POLLIN;
     serverPollFd.revents = 0;
     pollFds.push_back(serverPollFd); // Surveiller le serveur.
-    Channels nouveausalons("#general", 0);
-    _channels["#general"] = nouveausalons;
+    _channels["#general"] = Channels("#general", 0);;
     User newUser(0);
     _user[0] = newUser;
     // 7. Boucle principale
