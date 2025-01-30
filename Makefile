@@ -6,14 +6,14 @@
 #    By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/25 16:26:56 by kethouve          #+#    #+#              #
-#    Updated: 2025/01/29 15:48:30 by kethouve         ###   ########.fr        #
+#    Updated: 2025/01/30 18:24:50 by kethouve         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = ircserv
 SRC = main.cpp Server.cpp Channels.cpp User.cpp
 OBJ = $(SRC:.cpp=.o)
-CPPFLAGS = -Wall -Wextra -std=c++98 -g
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 CXX = c++
 RM = rm -f
 

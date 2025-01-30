@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/30 17:07:14 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/30 17:39:45 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ class Server
 		int			_serverfd;
 		std::map<int, User> _user;
 		std::map<std::string, Channels> _channels;
+		std::map<int, std::string> clientBuffers;
 		std::vector<pollfd> pollFds;
 		Server();
 	public:

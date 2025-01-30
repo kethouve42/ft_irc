@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/30 17:33:33 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/30 18:22:54 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -674,6 +674,7 @@ void Server::serverLoop()
                         pollFds.push_back(clientPollFd); // Ajouter le client
                         User newUser(clientSocket);
                         _user[clientSocket] = newUser;
+						clientBuffers[clientSocket] = ""; // Initialiser le buffer du client
                     }
                 }
 				// Message d'un user
@@ -682,8 +683,8 @@ void Server::serverLoop()
 					// Parsing message client (salon et contenu)
                     memset(buffer, 0, BUFFER_SIZE);
                     int bytesReceived = recv(pollFds[i].fd, buffer, BUFFER_SIZE, 0);
-                    std::string message(buffer);
-                    std::cout << message;
+                    /*std::string message(buffer);
+                    std::cout << message;*/
                     std::ostringstream ss;
                     ss << pollFds[i].fd;
                     std::string userfd = ss.str();
@@ -691,9 +692,22 @@ void Server::serverLoop()
                     if (bytesReceived <= 0)
                     {
                         destroyUser(pollFds[i].fd);
+						clientBuffers.erase(pollFds[i].fd);
                         --i; // Ajuster l'index après suppression
 						continue;
                     }
+					// Concaténer les nouvelles données avec celles précédemment reçues
+                    clientBuffers[pollFds[i].fd] += std::string(buffer, bytesReceived);
+					std::string message;
+					size_t pos;
+                    while ((pos = clientBuffers[pollFds[i].fd].find("\n")) != std::string::npos) 
+					{
+						message = (clientBuffers[pollFds[i].fd].substr(0, pos + 1));
+                        clientBuffers[pollFds[i].fd].erase(0, pos + 1);
+					}
+					if (message.empty())
+						continue;
+                    std::cout << message;
                     if (_user[pollFds[i].fd].is_user == false)
                     {
                         if (message.find("CAP") == 0)
