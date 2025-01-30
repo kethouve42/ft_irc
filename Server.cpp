@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/29 15:49:59 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/01/30 17:33:33 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,155 @@ std::string Server::fdToNickname(int fd)
     return std::string();
 }
 
+bool Server::nickExist(std::string nick)
+{
+	for (std::map<int, User>::iterator it = _user.begin(); it != _user.end(); ++it)
+    {
+        if (it->second.getUserNickName() == nick)
+            return true;
+    }
+    return false;
+}
+
+void Server::nick(std::string message, size_t i)
+{
+	std::string userNickName = message.substr(5);
+    userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
+	if (userNickName.empty())
+    {
+        std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " NICK :Not enough parameters\r\n";
+        send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+        return;
+    }
+	if (!nickExist(userNickName))
+	{
+		_user[pollFds[i].fd].setUserNickName(userNickName);
+		_user[pollFds[i].fd].nick = true;
+	}
+	else
+	{
+		std::string errMessage = "[SERVER]: " + userNickName + " existe deja trouvé un autre NickName!\r\n"; //trouver le code
+        send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << userNickName << " existe deja trouvé un autre NickName!" << std::endl;
+		return;
+	}
+}
+
+void Server::privmsg(std::string message, size_t i) //Gestion des :
+{
+	std::string temp;
+	std::string salon;
+	std::string msgContent;
+    std::cout << "PRIVMSG\n";
+    size_t pos = message.find(" ");
+    if (pos != std::string::npos)
+    {
+        temp = message.substr(8, pos - 8);
+        size_t pos = temp.find(" ");
+        salon = temp.substr(0, pos);
+        msgContent = temp.substr(pos + 1);
+        std::cout << "msg : " << msgContent << "salon :" << salon << "\n";
+    }
+    if (salon[0] == '#')
+    {
+        std::stringstream messageStream;
+        messageStream << ":" << _user[pollFds[i].fd].getUserNickName() << " PRIVMSG " 
+                    << salon << " :" << msgContent << "\r\n";
+        std::string messageToSend = messageStream.str();
+        _channels[salon].sendMessage(messageToSend, pollFds[i].fd);
+    }
+    else
+    {
+        std::map<int, User>::iterator it;
+        for (it = _user.begin(); it != _user.end(); ++it)
+        {
+            if (it->second.getUserNickName() == salon)
+            {
+                std::stringstream messageStream;
+                messageStream << ":" << _user[pollFds[i].fd].getUserNickName() 
+                    << " PRIVMSG " << salon 
+                    << " :" << msgContent << "\r\n";
+                std::string messageToSend = messageStream.str();
+                send(it->first, messageToSend.c_str(), messageToSend.size(), 0);
+                return;
+            }
+        }
+        // Si le destinataire n'existe pas, envoyer un message d'erreur
+        std::string errMessage = ":server 401 " + _user[pollFds[i].fd].getUserNickName() + 
+            " " + salon + " :No such nick/channel\r\n";
+        send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+    }
+}
+
+void Server::user(std::string message, size_t i)
+{
+	std::string username;
+    std::string hostname;
+    std::string servername;
+    std::string realname;
+
+    size_t start = 5;
+    size_t pos = message.find(" ", start);
+    if (pos != std::string::npos)
+    {
+        username = message.substr(start, pos - start);
+        start = pos + 1;
+
+        pos = message.find(" ", start);
+        if (pos != std::string::npos)
+        {
+            hostname = message.substr(start, pos - start);
+            start = pos + 1;
+
+            pos = message.find(" ", start);
+            if (pos != std::string::npos)
+            {
+                servername = message.substr(start, pos - start);
+                start = pos + 1;
+                realname = message.substr(start);
+            }
+        }
+    }
+    if (realname.size() != 0) //Gestion des :
+    {
+        _user[pollFds[i].fd].setUserRealname(realname);
+        _user[pollFds[i].fd].setUserName(username);
+        _user[pollFds[i].fd].user = true;
+    }
+    else
+    {
+        std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " USER :Not enough parameters\r\n";
+        send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+        return;
+    }
+}
+
+void Server::pass(std::string message, size_t i)
+{
+	std::string userPass = message.substr(5);
+    userPass.erase(userPass.find_last_not_of(" \t\n\r") + 1);
+    if (userPass.empty())
+    {
+        std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " PASS :Not enough parameters\r\n";
+        send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+        return;
+    }
+    if (userPass[0] == ':')
+    {
+        if (":" + _serverPass == userPass)
+            _user[pollFds[i].fd].pass = true;
+        else
+            destroyUser(pollFds[i].fd);
+    }
+    else
+    {
+        if (_serverPass == userPass)
+            _user[pollFds[i].fd].pass = true;
+        else
+            destroyUser(pollFds[i].fd);
+    }
+}
+
 void Server::displayUsers(std::string salon, int sender)
 {
     std::string message = salon + "'s users :\n";
@@ -97,8 +246,17 @@ void Server::destroyUser(const int user)
     close(user);
 }
 
+void Server::destroyChannel(std::string salon)
+{
+	if (_channels[salon].getUsers().size() <= 0)
+	{
+		_channels.erase(salon);
+		std::cout << RED << "Fermeture du salon " << salon << " faute d'utilisateur" << RESET << std::endl;
+	}
+}
+
 /* Ajoute le user au salon */
-void Server::join(std::string message, int user)
+void Server::join(std::string message, int user) //Ajouter une verif pour le pass JOIN [salon] [pass]
 {
     std::string joinSalon = message.substr(5);
     joinSalon.erase(joinSalon.find_last_not_of(" \t\n\r") + 1);
@@ -168,8 +326,6 @@ void Server::join(std::string message, int user)
     }
 }
 
-
-
 /* Retire un user du salon */
 void Server::kick(std::string message, int user)
 {
@@ -207,11 +363,12 @@ void Server::kick(std::string message, int user)
             return;
         }
 	}
-	if (_channels[salon].VerifAdmin(user) && userKickName != fdToNickname(user))
+	if (_channels[salon].VerifAdmin(user)/* && userKickName != fdToNickname(user)*/)        // Possible de s'auto kick
 	{
         std::string kickMessage = BLUE + ":server " + RESET + _user[userKick].getUserNickName() + " was kick out of " + salon + "\n";
         _channels[salon].sendMessage(kickMessage, 0);
 		_channels[salon].deleteUser(userKick);
+		destroyChannel(salon);
 	}
     else if (!_channels[salon].VerifAdmin(user))
     {
@@ -451,27 +608,28 @@ void Server::quit(std::string message, int user)
 
     if (_channels[quitSalon].VerifAdmin(user))
     {
-        if (_channels[quitSalon].getAdmins().size() <= 1 && _channels[quitSalon].getUsers().size() > 1)
+		// Possible de quitter le salon même si on est le dernier modé
+
+
+        /*if (_channels[quitSalon].getAdmins().size() <= 1 && _channels[quitSalon].getUsers().size() > 1)
         {
             std::string errMessage = RED + ":server" + RESET + " Il semble que vous etes le seul admin du serveur.\n\t Promouvez un autre membre avec 'MODE " + quitSalon + " +o user' avant de partir\n";
             send(user, errMessage.c_str(), errMessage.size(), 0);
             return ;
-        }
+        }*/
     }
 
     _channels[quitSalon].deleteUser(user);
-
-    /////////////////////////////////////////
-
-    // FAUT SUPPRIMER LE SALON LE DERNIER MEMBRE EST PARTI !!!!!!!
-
-    /////////////////////////////////////////
-
+	destroyChannel(quitSalon); // Verifier le message a envoyé a Konversation
     std::string quitMessage = BLUE + ":server " + RESET + fdToNickname(user) + " a quitte le salon '" + quitSalon + "'\n";
     _channels[quitSalon].sendMessage(quitMessage, user);
     return;
 }
 
+
+///////////////////////////////////////
+///////   Gerer le Ctrl+D   ///////////
+///////////////////////////////////////
 void Server::serverLoop()
 {
 	std::cout << "in loop" << std::endl;
@@ -526,9 +684,6 @@ void Server::serverLoop()
                     int bytesReceived = recv(pollFds[i].fd, buffer, BUFFER_SIZE, 0);
                     std::string message(buffer);
                     std::cout << message;
-                    std::string salon;
-                    std::string temp;
-                    std::string msgContent;
                     std::ostringstream ss;
                     ss << pollFds[i].fd;
                     std::string userfd = ss.str();
@@ -545,87 +700,16 @@ void Server::serverLoop()
                             continue;
                         else if (message.find("PASS") == 0)
                         {
-                            std::string userPass = message.substr(5);
-                            userPass.erase(userPass.find_last_not_of(" \t\n\r") + 1);
-                            if (userPass.empty())
-                            {
-                                std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " PASS :Not enough parameters\r\n";
-                                send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
-                                continue;
-                            }
-                            if (userPass[0] == ':')
-                            {
-                                if (":" + _serverPass == userPass)
-                                    _user[pollFds[i].fd].pass = true;
-                                else
-                                    destroyUser(pollFds[i].fd);
-                            }
-                            else
-                            {
-                                if (_serverPass == userPass)
-                                    _user[pollFds[i].fd].pass = true;
-                                else
-                                    destroyUser(pollFds[i].fd);
-                            }
+							pass(message, i);
                         }
                         else if (message.find("USER") == 0)
                         {
-                            std::string username;
-                            std::string hostname;
-                            std::string servername;
-                            std::string realname;
-
-                            size_t start = 5;
-                            size_t pos = message.find(" ", start);
-                            if (pos != std::string::npos)
-                            {
-                                username = message.substr(start, pos - start);
-                                start = pos + 1;
-
-                                pos = message.find(" ", start);
-                                if (pos != std::string::npos)
-                                {
-                                    hostname = message.substr(start, pos - start);
-                                    start = pos + 1;
-
-                                    pos = message.find(" ", start);
-                                    if (pos != std::string::npos)
-                                    {
-                                        servername = message.substr(start, pos - start);
-                                        start = pos + 1;
-                                        realname = message.substr(start);
-                                    }
-                                }
-                            }
-                            if (realname.size() != 0)
-                            {
-                                _user[pollFds[i].fd].setUserRealname(realname);
-                                _user[pollFds[i].fd].setUserName(username);
-                                _user[pollFds[i].fd].user = true;
-                            }
-                            else
-                            {
-                                std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " USER :Not enough parameters\r\n";
-                                send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
-                                continue;
-                            }
+							user(message, i);
                         }
-
                         else if (message.find("NICK") == 0)
                         {
-                            std::string userNickName = message.substr(5);
-                            userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
-                            if (userNickName.empty())
-                            {
-                                std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " NICK :Not enough parameters\r\n";
-                                send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
-                                continue;
-                            }
-                            _user[pollFds[i].fd].setUserNickName(userNickName);
-                            _user[pollFds[i].fd].nick = true;
+                            nick(message, i);
                         }
-
-
                         if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == false)
                             destroyUser(pollFds[i].fd);
                         if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == true)
@@ -639,52 +723,8 @@ void Server::serverLoop()
                     {
                         if (message.find("PRIVMSG") == 0)
                         {
-                            std::cout << "PRIVMSG\n";
-                            size_t pos = message.find(" ");
-                            if (pos != std::string::npos)
-                            {
-                                temp = message.substr(8, pos - 8);
-                                size_t pos = temp.find(" ");
-                                salon = temp.substr(0, pos);
-                                msgContent = temp.substr(pos + 1);
-                                std::cout << "msg : " << msgContent << "salon :" << salon << "\n";
-                            }
-                            if (salon[0] == '#')
-                            {
-                                std::stringstream messageStream;
-                                messageStream << ":" << _user[pollFds[i].fd].getUserNickName() << " PRIVMSG " 
-                                            << salon << " :" << msgContent << "\r\n";
-                                std::string messageToSend = messageStream.str();
-                                _channels[salon].sendMessage(messageToSend, pollFds[i].fd);
-                            }
-                            else
-                            {
-                                bool sende = false;
-                                std::map<int, User>::iterator it;
-                                for (it = _user.begin(); it != _user.end(); ++it)
-                                {
-                                    if (it->second.getUserNickName() == salon)
-                                    {
-                                        std::stringstream messageStream;
-                                        messageStream << ":" << _user[pollFds[i].fd].getUserNickName() 
-                                            << " PRIVMSG " << salon 
-                                            << " :" << msgContent << "\r\n";
-                                        std::string messageToSend = messageStream.str();
-                                        send(it->first, messageToSend.c_str(), messageToSend.size(), 0);
-                                        sende = true;
-                                        break;
-                                    }
-                                }
-                                if (sende == false)
-                                {
-                                    // Si le destinataire n'existe pas, envoyer un message d'erreur
-                                    std::string errMessage = ":server 401 " + _user[pollFds[i].fd].getUserNickName() + 
-                                        " " + salon + " :No such nick/channel\r\n";
-                                    send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
-                                }
-                            }
+							privmsg(message, i);
                         }
-
                         else if (message.find("JOIN") == 0)
                         {
                             join(message, pollFds[i].fd);
@@ -695,10 +735,7 @@ void Server::serverLoop()
                         }
                         else if (message.find("NICK") == 0)
                         {
-                            std::string userNickName = message.substr(5);
-                            userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);
-                            _user[pollFds[i].fd].setUserNickName(userNickName);
-                            // GERER POUR QU'IL Y AIT PAS DEUX FOIS LE MEME NICKNAME
+                            nick(message, i);
                         }
                         else if (message.find("TOPIC") == 0)
                         {
@@ -716,7 +753,7 @@ void Server::serverLoop()
                         {
                             quit(message, pollFds[i].fd);
                         }
-                        else if (message.find("USER") == 0) // <== DEBUG
+                        else if (message.find("DISPLAYUSER") == 0) // <== DEBUG
                         {
                             std::string salon = message.substr(5);
                             salon.erase(salon.find_last_not_of(" \t\n\r") + 1);
@@ -725,14 +762,10 @@ void Server::serverLoop()
                         
                         else
                         {
-                            salon = "#general";
-                            //std::cout << "test msg envoyer\n";
-                            //std::cout << "salon: " << salon << std::endl;
-                            //std::cout << "Message reçu de " << pollFds[i].fd << ": " << message << "\n";
                             std::ostringstream broadcastStream;
                             broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
                             std::string broadcastMessage = broadcastStream.str();
-                            _channels[salon].sendMessage(broadcastMessage, pollFds[i].fd);
+                            _channels["#general"].sendMessage(broadcastMessage, pollFds[i].fd);
                         }
                     }
                 }

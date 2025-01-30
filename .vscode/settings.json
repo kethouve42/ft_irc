@@ -49,6 +49,9 @@
 		"sstream": "cpp",
 		"stdexcept": "cpp",
 		"streambuf": "cpp",
-		"typeinfo": "cpp"
+		"typeinfo": "cpp",
+		"hash_map": "cpp",
+		"csignal": "cpp",
+		"list": "cpp"
 	}
 }
