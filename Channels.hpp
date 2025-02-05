@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/28 17:21:23 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/02/04 16:29:27 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ public:
 	std::vector<int> getUsers() const;
 	std::vector<int> getAdmins() const;
 	std::string getTopic() const;
+	std::string getPassword() const;
 	int	getUserLimit();
 	bool getRestrictedTopic();
 	bool getInvitMode();

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   User.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
+/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:55:21 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/30 18:19:58 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/04 16:34:00 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ User::User(int fd)
 	_userFd = fd;
 	oss << fd;
 	_nickName = oss.str();
-	is_user = false;
+	is_user = true;       // <== TRUE pour pas se faire chier, sinon de base FALSE
 	user = false;
 	nick = false;
 	pass = false;

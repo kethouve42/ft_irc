@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
+/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/30 18:22:54 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/04 17:08:56 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -258,10 +258,22 @@ void Server::destroyChannel(std::string salon)
 /* Ajoute le user au salon */
 void Server::join(std::string message, int user) //Ajouter une verif pour le pass JOIN [salon] [pass]
 {
-    std::string joinSalon = message.substr(5);
-    joinSalon.erase(joinSalon.find_last_not_of(" \t\n\r") + 1);
-
+    std::string joinSalon;
+    std::string passWord;
     std::string nickname = _user[user].getUserNickName();
+
+    size_t pos = message.find(" ");
+    if (pos != std::string::npos)
+    {
+        std::string temp = message.substr(5);
+        size_t pos = temp.find(" ");
+        joinSalon = temp.substr(0, pos);
+        passWord = temp.substr(pos + 1);
+    }
+    joinSalon.erase(joinSalon.find_last_not_of(" \t\n\r") + 1);
+    passWord.erase(passWord.find_last_not_of(" \t\n\r") + 1);
+
+    std::cout << "JoinSalon : '" << joinSalon << "'\nPassword : '" << passWord << "'\n";
 
     // Salon vide
     if (joinSalon.empty() || joinSalon[0] != '#')
@@ -270,6 +282,7 @@ void Server::join(std::string message, int user) //Ajouter une verif pour le pas
         send(user, errMessage.c_str(), errMessage.size(), 0);
         return;
     }
+
     // Création de salon
     if (_channels.find(joinSalon) == _channels.end())
     {
@@ -289,9 +302,20 @@ void Server::join(std::string message, int user) //Ajouter une verif pour le pas
         return;
     }
 
+    if (_channels[joinSalon].getPassword() != "")
+    {
+        if (_channels[joinSalon].getPassword() != passWord)
+        {
+            std::string fullMessage = ":server 471 " + nickname + " " + joinSalon + " :Wrong password\r\n";
+            send(user, fullMessage.c_str(), fullMessage.size(), 0);
+            return ;
+        }
+    }
+
     // Ajout de l'utilisateur au salon
     if (_channels[joinSalon].addUser(user) == 0)
     {
+
         std::string joinMessage = ":" + nickname + " JOIN :" + joinSalon + "\r\n";
         send(user, joinMessage.c_str(), joinMessage.size(), 0);
         _channels[joinSalon].sendMessage(joinMessage, user);
@@ -626,7 +650,6 @@ void Server::quit(std::string message, int user)
     return;
 }
 
-
 ///////////////////////////////////////
 ///////   Gerer le Ctrl+D   ///////////
 ///////////////////////////////////////
@@ -640,7 +663,7 @@ void Server::serverLoop()
     serverPollFd.events = POLLIN;
     serverPollFd.revents = 0;
     pollFds.push_back(serverPollFd); // Surveiller le serveur.
-    _channels["#general"] = Channels("#general", 0);;
+    _channels["#general"] = Channels("#general", 0);
     User newUser(0);
     _user[0] = newUser;
     // 7. Boucle principale
@@ -675,6 +698,7 @@ void Server::serverLoop()
                         User newUser(clientSocket);
                         _user[clientSocket] = newUser;
 						clientBuffers[clientSocket] = ""; // Initialiser le buffer du client
+                        _channels["#general"].addUser(clientSocket);
                     }
                 }
 				// Message d'un user
@@ -767,19 +791,24 @@ void Server::serverLoop()
                         {
                             quit(message, pollFds[i].fd);
                         }
+                        else if (message.find("USER") == 0)
+                        {
+                            user(message, pollFds[i].fd);
+                        }
                         else if (message.find("DISPLAYUSER") == 0) // <== DEBUG
                         {
-                            std::string salon = message.substr(5);
+                            std::string salon = message.substr(12);
                             salon.erase(salon.find_last_not_of(" \t\n\r") + 1);
                             displayUsers(salon , pollFds[i].fd);
                         }
                         
                         else
                         {
+                            std::string gene = "#general";
                             std::ostringstream broadcastStream;
                             broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
                             std::string broadcastMessage = broadcastStream.str();
-                            _channels["#general"].sendMessage(broadcastMessage, pollFds[i].fd);
+                            _channels[gene].sendMessage(broadcastMessage, pollFds[i].fd);
                         }
                     }
                 }

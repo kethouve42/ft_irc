@@ -6,7 +6,7 @@
 /*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/28 17:21:06 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/02/04 16:29:14 by acasanov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -185,6 +185,11 @@ std::vector<int> Channels::getAdmins() const
 std::string Channels::getTopic() const
 {
 	return this->_channelTopic;
+}
+
+std::string Channels::getPassword() const
+{
+	return this->_channelPass;
 }
 
 /* Setters */
