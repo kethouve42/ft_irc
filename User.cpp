@@ -26,7 +26,7 @@ User::User(int fd)
 	_userFd = fd;
 	oss << fd;
 	_nickName = oss.str();
-	is_user = true;       // <== TRUE pour pas se faire chier, sinon de base FALSE
+	is_user = false;       // <== TRUE pour pas se faire chier, sinon de base FALSE
 	user = false;
 	nick = false;
 	pass = false;
