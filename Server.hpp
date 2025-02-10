@@ -68,6 +68,7 @@ class Server
 		void	kick(std::string message, int user);
 		void	topic(std::string message, int user);
 		void	invite(std::string message, int user);
+		void	part(std::string message, int user);
 		void	quit(std::string message, int user);
 		void	mode(std::string message, int user);
 		void	destroyUser(const int user);

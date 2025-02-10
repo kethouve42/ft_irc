@@ -585,9 +585,10 @@ void Server::mode(std::string message, int user)
         }
     }
     // Debug : Afficher les parties extraites
+    /*
     std::cout << "Salon : '" << salon << "'\n";
     std::cout << "Commande : '" << commande << "'\n";
-    std::cout << "Paramètre : '" << param << "'\n";
+    std::cout << "Paramètre : '" << param << "'\n";*/
 
     if (_channels.find(salon) == _channels.end())
     {
@@ -648,47 +649,59 @@ void Server::mode(std::string message, int user)
 }
 
 /* Retire le user du salon */
-void Server::quit(std::string message, int user)
+void Server::part(std::string message, int user)
 {
-    std::string quitSalon = message.substr(5);
-    quitSalon.erase(quitSalon.find_last_not_of(" \t\n\r") + 1);
-
-    if (quitSalon.empty())
+    std::string partSalon = message.substr(5);
+    partSalon.erase(partSalon.find_last_not_of(" \t\n\r") + 1);
+    if (partSalon[0] == ':')
+        partSalon.erase(0, 1);
+    if (partSalon.empty())
     {
         std::string errMessage = RED + ":server" + RESET + " Pas assez de paramètres.\n";
         send(user, errMessage.c_str(), errMessage.size(), 0);
         return ;
     }
 
-    if (_channels.find(quitSalon) == _channels.end())
+    if (_channels.find(partSalon) == _channels.end())
     {
-        std::cout << "Le salon " << quitSalon << " n'existe pas" << std::endl;
+        std::cout << "Le salon " << partSalon << " n'existe pas" << std::endl;
         return;
     }
 
-    if (_channels[quitSalon].VerifAdmin(user))
+    if (_channels[partSalon].VerifAdmin(user))
     {
 		// Possible de quitter le salon même si on est le dernier modé
 
 
-        /*if (_channels[quitSalon].getAdmins().size() <= 1 && _channels[quitSalon].getUsers().size() > 1)
+        /*if (_channels[partSalon].getAdmins().size() <= 1 && _channels[partSalon].getUsers().size() > 1)
         {
-            std::string errMessage = RED + ":server" + RESET + " Il semble que vous etes le seul admin du serveur.\n\t Promouvez un autre membre avec 'MODE " + quitSalon + " +o user' avant de partir\n";
+            std::string errMessage = RED + ":server" + RESET + " Il semble que vous etes le seul admin du serveur.\n\t Promouvez un autre membre avec 'MODE " + partSalon + " +o user' avant de partir\n";
             send(user, errMessage.c_str(), errMessage.size(), 0);
             return ;
         }*/
     }
 
-    _channels[quitSalon].deleteUser(user);
-	destroyChannel(quitSalon); // Verifier le message a envoyé a Konversation
-    std::string quitMessage = BLUE + ":server " + RESET + fdToNickname(user) + " a quitte le salon '" + quitSalon + "'\n";
-    _channels[quitSalon].sendMessage(quitMessage, user);
+    _channels[partSalon].deleteUser(user);
+	destroyChannel(partSalon); // Verifier le message a envoyé a Konversation
+    std::string partMessage = BLUE + ":server " + RESET + fdToNickname(user) + " a quitte le salon '" + partSalon + "'\n";
+    _channels[partSalon].sendMessage(partMessage, user);
     return;
 }
 
-///////////////////////////////////////
-///////   Gerer le Ctrl+D   ///////////
-///////////////////////////////////////
+void Server::quit(std::string message, int user)
+{
+    std::string quitMessage = message.substr(5);
+    quitMessage.erase(quitMessage.find_last_not_of(" \t\n\r") + 1);
+    if (quitMessage[0] == ':')
+        quitMessage.erase(0, 1);
+    if (!quitMessage.empty())
+    {
+        std::string quitServeur = "QUIT :" + fdToNickname(user) + " quitte le serveur : " + quitMessage + "\n";
+        _channels["#general"].sendMessage(quitServeur, user);
+    }
+    destroyUser(user);
+}
+
 void Server::serverLoop()
 {
 	std::cout << "in loop" << std::endl;
@@ -822,6 +835,10 @@ void Server::serverLoop()
                         else if (message.find("MODE") == 0)
                         {
                             mode(message, pollFds[i].fd);
+                        }
+                        else if (message.find("PART") == 0)
+                        {
+                            part(message, pollFds[i].fd);
                         }
                         else if (message.find("QUIT") == 0)
                         {
