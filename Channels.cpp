@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channels.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/04 16:29:14 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/02/12 19:03:42 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,45 +193,68 @@ std::string Channels::getPassword() const
 }
 
 /* Setters */
-void Channels::setUserLimit(const int limit)
+void Channels::setUserLimit(const int limit, int user)
 {
 	this->_userLimit = limit;
+	std::ostringstream ss;
+	ss << limit;
+	std::string newlimit = ss.str();
 	std::cout << this->_channelName << " new user limit is " << this->_userLimit << std::endl;
+	if (this->_userLimit != INT_MAX)
+	{
+		std::string Seted = "NOTICE" + this->_channelName + " : user limit is set at: " + newlimit + "\r\n";
+    	send(user, Seted.c_str(), Seted.size(), 0);
+	}
+	else
+	{
+		std::string Seted = "NOTICE" + this->_channelName + " : user limit is unset " + "\r\n";
+    	send(user, Seted.c_str(), Seted.size(), 0);
+	}
 }
 
-void Channels::setTopic(const std::string newTopic)
+void Channels::setTopic(const std::string newTopic, int user)
 {
 	this->_channelTopic = newTopic;
 	std::cout << this->_channelName << " new topic is " << this->_channelTopic << std::endl;
+	std::string Seted = "NOTICE" + this->_channelName + " topic is now: " + this->_channelTopic + "\r\n";
+    send(user, Seted.c_str(), Seted.size(), 0);
 }
 
-void Channels::setChannelPass(const std::string password)
+void Channels::setChannelPass(const std::string password, int user)
 {
 	this->_channelPass = password;
 	if (!password.empty())
 	{
 		std::cout << "New pass: " << this->_channelPass << std::endl;
 		std::cout << "Password '" << password << "' set for channel '" << this->_channelName << "'" << std::endl;
+		std::string Seted = "NOTICE" + this->_channelName + " : has a password set\r\n";
+        send(user, Seted.c_str(), Seted.size(), 0);
 	}
 	else
 	{
 		std::cout << "Channel '" << this->_channelName << "' has no password"<< std::endl;
+		std::string Seted = "NOTICE" + this->_channelName + " : password unset\r\n";
+        send(user, Seted.c_str(), Seted.size(), 0);
 	}
 }
 
-void Channels::setInvitationMode(const std::string option)
+void Channels::setInvitationMode(const std::string option, int user)
 {
 	if (option == "+i")
 	{
 		if (_invitMode)
 		{
 			std::cout << "channel already set on ivitation mode" << std::endl;
+			std::string alreadySet = "NOTICE " + this->_channelName + " : already set on ivitation mode\r\n";
+        	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 			return;
 		}
 		else
 		{
 			this->_invitMode = true;
 			std::cout << this->_channelName << " is now on invitation mode" << std::endl;
+			std::string Seted = "NOTICE" + this->_channelName + " : is now on invitation mode\r\n";
+        	send(user, Seted.c_str(), Seted.size(), 0);
 		}
 	}
 	else if (option == "-i")
@@ -239,29 +262,37 @@ void Channels::setInvitationMode(const std::string option)
 		if (_invitMode == false)
 		{
 			std::cout << "channel is not on ivitation mode" << std::endl;
+			std::string Seted = "NOTICE" + this->_channelName + " : is not on invitation mode\r\n";
+        	send(user, Seted.c_str(), Seted.size(), 0);
 			return;
 		}
 		else
 		{
 			this->_invitMode = false;
 			std::cout << this->_channelName << " invitation mode desactivated" << std::endl;
+			std::string Seted = "NOTICE" + this->_channelName + " : is no more on invitation mode\r\n";
+        	send(user, Seted.c_str(), Seted.size(), 0);
 		}
 	}
 }
 
-void Channels::setRestrictedTopic(const std::string option)
+void Channels::setRestrictedTopic(const std::string option, int user, std::string nickName)
 {
 	if (option == "+t")
 	{
 		if (_restrictedTopic)
 		{
 			std::cout << "topic already set on admin only" << std::endl;
+			std::string alreadySet = "NOTICE " + nickName + " : Topic is already set on admin only\r\n";
+        	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 			return;
 		}
 		else
 		{
 			this->_restrictedTopic = true;
 			std::cout << this->_channelName << " topic is now on admin only" << std::endl;
+			std::string alreadySet = "NOTICE " + nickName + " : Topic is now set on admin only\r\n";
+        	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 		}
 	}
 	else if (option == "-t")
@@ -269,12 +300,16 @@ void Channels::setRestrictedTopic(const std::string option)
 		if (_restrictedTopic == false)
 		{
 			std::cout << "topic is already not on admin only" << std::endl;
+			std::string alreadySet = "NOTICE " + nickName + " : Topic is already not on admin only\r\n";
+        	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 			return;
 		}
 		else
 		{
 			this->_restrictedTopic = false;
 			std::cout << this->_channelName << " topic can be change by everyone now" << std::endl;
+			std::string alreadySet = "NOTICE " + nickName + " : Topic is no more on admin only\r\n";
+        	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 		}
 	}
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/04 17:08:56 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/02/12 19:51:10 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,12 +89,14 @@ void Server::nick(std::string message, size_t i)
 	{
         if (userNickName[0] == ':')
             userNickName.erase(0, 1);
-		_user[pollFds[i].fd].setUserNickName(userNickName);
-		_user[pollFds[i].fd].nick = true;
+			std::string nickChanged = ":" + _user[pollFds[i].fd].getUserNickName() + " NICK " + userNickName + "\r\n";
+			send(pollFds[i].fd, nickChanged.c_str(), nickChanged.size(), 0);
+			_user[pollFds[i].fd].setUserNickName(userNickName);
+			_user[pollFds[i].fd].nick = true;
 	}
 	else
 	{
-		std::string errMessage = "NOTICE " + userNickName + " existe deja trouvé un autre NickName!\r\n"; //trouver le code
+		std::string errMessage = "NOTICE : " + userNickName + " existe deja trouvé un autre NickName!\r\n"; //trouver le code
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
 		std::cout << userNickName << " existe deja trouvé un autre NickName!" << std::endl;
 		return;
@@ -160,6 +162,7 @@ void Server::privmsg(std::string message, size_t i)
     }
 }
 
+/*Set du user*/
 void Server::user(std::string message, size_t i)
 {
 	std::string username;
@@ -349,7 +352,7 @@ void Server::join(std::string message, int user)
         namesMessage += "\r\n";
 
         // Fin de la liste des utilisateurs
-        std::string endNamesMessage = ":server 366 " + nickname + " " + joinSalon + " :End of /NAMES list\r\n";
+        std::string endNamesMessage = ":server 366 " + nickname + " " + joinSalon + " :End of /NAMES list\r\n"; // <== WHY ???
 
         send(user, namesMessage.c_str(), namesMessage.size(), 0);
         send(user, endNamesMessage.c_str(), endNamesMessage.size(), 0);
@@ -368,7 +371,7 @@ void Server::join(std::string message, int user)
     }
 }
 
-/* Retire un user du salon */
+/* Retire un user du salon */ /*Faire le message a l'user pour konversation*/
 void Server::kick(std::string message, int user)
 {
 	std::string userKickName;
@@ -397,7 +400,7 @@ void Server::kick(std::string message, int user)
             messageKick.erase(0, 1);
     }
     userKickName.erase(userKickName.find_last_not_of(" \t\n\r") + 1);
-    messageKick.erase(userKickName.find_last_not_of(" \t\n\r") + 1);
+    messageKick.erase(messageKick.find_last_not_of(" \t\n\r") + 1);
 	std::istringstream ss(userKickName);
 	int userKick;
     ss >> userKick;
@@ -421,21 +424,25 @@ void Server::kick(std::string message, int user)
 	}
 	if (_channels[salon].VerifAdmin(user)/* && userKickName != fdToNickname(user)*/)        // Possible de s'auto kick
 	{
-        if (messageKick == " ")
+        if (messageKick == "")
             messageKick = "was kicked out";
-        std::string kickMessage = "KICK " + salon + " " + _user[userKick].getUserNickName() + " :" + messageKick + "\r\n";
+        std::string kickMessage = "NOTICE : " + salon + " " + _user[userKick].getUserNickName() + " :" + messageKick + "\r\n";
         _channels[salon].sendMessage(kickMessage, 0);
+
+		/*Trouve le bon message pour Konversation*/
+		std::string userMessage = ":" + _user[user].getUserNickName() + " KICK " + salon + " " + _user[userKick].getUserNickName() + "\r\n";
+		send(userKick, userMessage.c_str(), userMessage.size(), 0);
 		_channels[salon].deleteUser(userKick);
 		destroyChannel(salon);
 	}
     else if (!_channels[salon].VerifAdmin(user))
     {
-        std::string notAdmin = "NOTICE " + _user[user].getUserNickName() + " :No permission for kick in " + salon + "\r\n";
+        std::string notAdmin = "NOTICE : No permission for kick in " + salon + "\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
     }
     else
     {
-        std::string notAdmin = "NOTICE " + _user[user].getUserNickName() + " :Error occurred in the request\r\n";
+        std::string notAdmin = "NOTICE : Error occurred in the request\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
     }
 }
@@ -476,31 +483,31 @@ void Server::topic(std::string message, int user)
 
     if (_channels[salon].getInvitMode() && !_channels[salon].VerifUser(user))
     {
-        std::string notMember = "NOTICE " + _user[user].getUserNickName() + " :Topic available only to members of " + salon + "\r\n";
+        std::string notMember = "NOTICE : " + _user[user].getUserNickName() + " Topic available only to members of " + salon + "\r\n";
         send(user, notMember.c_str(), notMember.size(), 0);
         return;
     }
 
     if (newTopic.empty() && !_channels[salon].getTopic().empty())
     {
-        std::string topicMessage = "NOTICE " + _user[user].getUserNickName() + " :TOPIC of " + salon + " : " + _channels[salon].getTopic() + "\r\n";
+        std::string topicMessage = "NOTICE : TOPIC of " + salon + " : " + _channels[salon].getTopic() + "\r\n";
         send(user, topicMessage.c_str(), topicMessage.size(), 0);
     }
     else if (newTopic.empty() && _channels[salon].getTopic().empty())
     {
-        std::string noTopic = "NOTICE " + _user[user].getUserNickName() + " :" + salon + " has no topic yet\r\n";
+        std::string noTopic = "NOTICE : " + salon + " has no topic yet\r\n";
         send(user, noTopic.c_str(), noTopic.size(), 0);
     }
     else if (_channels[salon].getRestrictedTopic() && !_channels[salon].VerifAdmin(user))
     {
-        std::string notAdmin = "NOTICE " + _user[user].getUserNickName() + " :No permission to change topic on " + salon + "\r\n";
+        std::string notAdmin = "NOTICE : No permission to change topic on " + salon + "\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
     }
     else
     {
-        _channels[salon].setTopic(newTopic);
+        _channels[salon].setTopic(newTopic, user);
 
-        std::string newTopicMessage = "NOTICE " + _user[user].getUserNickName() + " :New topic on " + salon + " : " + newTopic + "\r\n";
+        std::string newTopicMessage = "NOTICE : New topic on " + salon + " : " + newTopic + "\r\n";
         _channels[salon].sendMessage(newTopicMessage, user);
     }
 
@@ -523,6 +530,8 @@ void Server::invite(std::string message, int user)
     if (_channels.find(salon) == _channels.end())
     {
         std::cout << "Le salon " << salon << " n'existe pas" << std::endl;
+		std::string notExisting = "NOTICE : This channel doesn't exist\r\n";
+        send(user, notExisting.c_str(), notExisting.size(), 0);
         return;
     }
 
@@ -536,6 +545,8 @@ void Server::invite(std::string message, int user)
         if (userInvite == -1)
         {
             std::cerr << "Utilisateur avec nickname ou ID " << userInviteName << " introuvable.\n";
+			std::string notUser = "NOTICE : user " + userInviteName + " not found \r\n";
+        	send(user, notUser.c_str(), notUser.size(), 0);
             return;
         }
 	}
@@ -543,7 +554,10 @@ void Server::invite(std::string message, int user)
     if (_channels[salon].VerifUser(user))
         _channels[salon].addInvited(userInvite);
     else
-        std::cout << "user n'est meme pas membre, et ne peux donc pas inviter\n";
+	{
+		std::string notMember = "NOTICE : You're not a member of this channel, you can't invit\r\n";
+        send(user, notMember.c_str(), notMember.size(), 0);
+	}
 
 }
 
@@ -593,30 +607,34 @@ void Server::mode(std::string message, int user)
     if (_channels.find(salon) == _channels.end())
     {
         std::cout << "Le salon " << salon << " n'existe pas" << std::endl;
+		std::string notExisting = "NOTICE : This channel doesn't exist\r\n";
+        send(user, notExisting.c_str(), notExisting.size(), 0);
         return;
-    } 
+    }
+	else if (commande.empty() || commande == "+b")
+		return; 
     else if (!_channels[salon].VerifAdmin(user))
     {
-        std::string notAdmin = RED + ":server " + RESET + salon + " only admins can use MODE (so you're not)\n";
+        std::string notAdmin = "NOTICE : " + salon + " only admins can use MODE (so you're not)\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
         return;
     }
 
     if (commande == "+i" || commande == "-i")
     {
-        _channels[salon].setInvitationMode(commande);
+        _channels[salon].setInvitationMode(commande, user);
     }
     else if (commande == "+t" || commande == "-t")
     {
-        _channels[salon].setRestrictedTopic(commande);
+        _channels[salon].setRestrictedTopic(commande, user, _user[user].getUserNickName());
     }
     else if (commande == "+k" && !param.empty())
     {
-        _channels[salon].setChannelPass(param);
+        _channels[salon].setChannelPass(param, user);
     }
     else if (commande == "-k")
     {
-        _channels[salon].setChannelPass("");
+        _channels[salon].setChannelPass("", user);
     }
     else if (commande == "+o" || commande == "-o")
     {
@@ -628,7 +646,11 @@ void Server::mode(std::string message, int user)
                 _channels[salon].removeAdmin(nicknameToFd(param));
         }
         else
+		{
             std::cout << param << " not found" << std::endl;
+			std::string noParam = "NOTICE : Not enough parameters: <MODE> <channel> <parameter> <username>\r\n";
+        	send(user, noParam.c_str(), noParam.size(), 0);
+		}
     }
     else if (commande == "+l" && !param.empty())
     {
@@ -640,11 +662,11 @@ void Server::mode(std::string message, int user)
             std::cerr << "Error value." << std::endl;
         }
         else if (value > 0)
-            _channels[salon].setUserLimit(value);
+            _channels[salon].setUserLimit(value, user);
     }
     else if (commande == "-l")
     {
-        _channels[salon].setUserLimit(INT_MAX);
+        _channels[salon].setUserLimit(INT_MAX, user);
     }
 }
 
@@ -657,7 +679,7 @@ void Server::part(std::string message, int user)
         partSalon.erase(0, 1);
     if (partSalon.empty())
     {
-        std::string errMessage = RED + ":server" + RESET + " Pas assez de paramètres.\n";
+        std::string errMessage = "NOTICE : Pas assez de paramètres.\n";
         send(user, errMessage.c_str(), errMessage.size(), 0);
         return ;
     }
@@ -665,26 +687,17 @@ void Server::part(std::string message, int user)
     if (_channels.find(partSalon) == _channels.end())
     {
         std::cout << "Le salon " << partSalon << " n'existe pas" << std::endl;
+		std::string notExisting = "NOTICE : This channel doesn't exist\r\n";
+        send(user, notExisting.c_str(), notExisting.size(), 0);
         return;
-    }
-
-    if (_channels[partSalon].VerifAdmin(user))
-    {
-		// Possible de quitter le salon même si on est le dernier modé
-
-
-        /*if (_channels[partSalon].getAdmins().size() <= 1 && _channels[partSalon].getUsers().size() > 1)
-        {
-            std::string errMessage = RED + ":server" + RESET + " Il semble que vous etes le seul admin du serveur.\n\t Promouvez un autre membre avec 'MODE " + partSalon + " +o user' avant de partir\n";
-            send(user, errMessage.c_str(), errMessage.size(), 0);
-            return ;
-        }*/
     }
 
     _channels[partSalon].deleteUser(user);
 	destroyChannel(partSalon); // Verifier le message a envoyé a Konversation
-    std::string partMessage = BLUE + ":server " + RESET + fdToNickname(user) + " a quitte le salon '" + partSalon + "'\n";
+    std::string partMessage = "NOTICE : " + fdToNickname(user) + " a quitte le salon '" + partSalon + "'\r\n";
     _channels[partSalon].sendMessage(partMessage, user);
+	std::string userMessage = ":" + _user[user].getUserNickName() + " PART " + partSalon + " :Goodbye!\r\n";
+	send(user, userMessage.c_str(), userMessage.size(), 0);
     return;
 }
 
@@ -699,6 +712,11 @@ void Server::quit(std::string message, int user)
         std::string quitServeur = "QUIT :" + fdToNickname(user) + " quitte le serveur : " + quitMessage + "\n";
         _channels["#general"].sendMessage(quitServeur, user);
     }
+	else
+	{
+		std::string quitServeur = "QUIT :" + fdToNickname(user) + " quitte le serveur" + "\n";
+        _channels["#general"].sendMessage(quitServeur, user);
+	}
     destroyUser(user);
 }
 
@@ -747,7 +765,6 @@ void Server::serverLoop()
                         User newUser(clientSocket);
                         _user[clientSocket] = newUser;
 						clientBuffers[clientSocket] = ""; // Initialiser le buffer du client
-                        _channels["#general"].addUser(clientSocket);
                     }
                 }
 				// Message d'un user
@@ -857,11 +874,12 @@ void Server::serverLoop()
                         
                         else
                         {
-                            std::string gene = "#general";
+							//std::cout << "GENERAL" << std::endl;
                             std::ostringstream broadcastStream;
                             broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
                             std::string broadcastMessage = broadcastStream.str();
-                            _channels[gene].sendMessage(broadcastMessage, pollFds[i].fd);
+							//std::cout << broadcastMessage << std::endl;
+                            _channels["#general"].sendMessage(broadcastMessage, pollFds[i].fd);
                         }
                     }
                 }
@@ -877,6 +895,7 @@ void Server::clearServ()
 {
 	_channels.clear();
 	_user.clear();
+	clientBuffers.clear();
     pollFds.clear();
 	std::vector<pollfd> empty;
     pollFds.swap(empty);

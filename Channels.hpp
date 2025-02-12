@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channels.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: acasanov <acasanov@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/04 16:29:27 by acasanov         ###   ########.fr       */
+/*   Updated: 2025/02/12 16:21:53 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,9 +49,9 @@ public:
 	int	getUserLimit();
 	bool getRestrictedTopic();
 	bool getInvitMode();
-	void setTopic(const std::string newTopic);
-	void setUserLimit(const int limit);
-	void setChannelPass(const std::string password);
-	void setInvitationMode(const std::string option);
-	void setRestrictedTopic(const std::string option);
+	void setTopic(const std::string newTopic, int user);
+	void setUserLimit(const int limit, int user);
+	void setChannelPass(const std::string password, int user);
+	void setInvitationMode(const std::string option, int user);
+	void setRestrictedTopic(const std::string option, int user, std::string nickName);
 };
