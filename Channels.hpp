@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/12 16:21:53 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/13 14:53:40 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ public:
 	std::vector<int> getAdmins() const;
 	std::string getTopic() const;
 	std::string getPassword() const;
+	std::string getChannelName() const;
 	int	getUserLimit();
 	bool getRestrictedTopic();
 	bool getInvitMode();

@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/30 17:39:45 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/13 15:50:12 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,4 +82,5 @@ class Server
 		int		nicknameToFd(std::string nick);
 		std::string fdToNickname(int fd);
 		void	displayUsers(std::string salon, int sender);
+		void	displayChannels(int sender);
 };
