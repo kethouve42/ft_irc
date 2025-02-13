@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/12 19:51:10 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/13 15:45:57 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -234,6 +234,16 @@ void Server::pass(std::string message, size_t i)
     }
 }
 
+void Server::displayChannels(int sender)
+{
+    std::string message = "list of channels: \n";
+    for (std::map<std::string, Channels>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+	{
+        message += it->second.getChannelName() + "\n";
+	}
+	send(sender, message.c_str(), message.size(), 0);
+}
+
 void Server::displayUsers(std::string salon, int sender)
 {
     std::string message = salon + "'s users :\n";
@@ -251,6 +261,7 @@ void Server::destroyUser(const int user)
     for (std::map<std::string, Channels>::iterator it = _channels.begin(); it != _channels.end(); ++it)
     {
         it->second.deleteUser(user);
+		destroyChannel(it->second.getChannelName());
     }
     if (_user.find(user) != _user.end()) {
         _user.erase(user);
@@ -356,7 +367,7 @@ void Server::join(std::string message, int user)
 
         send(user, namesMessage.c_str(), namesMessage.size(), 0);
         send(user, endNamesMessage.c_str(), endNamesMessage.size(), 0);
-        _channels[joinSalon].sendMessage(namesMessage, user);
+		_channels[joinSalon].sendMessage(namesMessage, user);
         _channels[joinSalon].sendMessage(endNamesMessage, user);
 
         // Envoi du topic s'il existe
@@ -694,12 +705,12 @@ void Server::part(std::string message, int user)
         return;
     }
 
-    _channels[partSalon].deleteUser(user);
-	destroyChannel(partSalon); // Verifier le message a envoyé a Konversation
     std::string partMessage = "NOTICE : " + fdToNickname(user) + " a quitte le salon '" + partSalon + "'\r\n";
     _channels[partSalon].sendMessage(partMessage, user);
 	std::string userMessage = ":" + _user[user].getUserNickName() + " PART " + partSalon + " :Goodbye!\r\n";
 	send(user, userMessage.c_str(), userMessage.size(), 0);
+    _channels[partSalon].deleteUser(user);
+	destroyChannel(partSalon); // Verifier le message a envoyé a Konversation
     return;
 }
 
@@ -873,6 +884,10 @@ void Server::serverLoop()
                             salon.erase(salon.find_last_not_of(" \t\n\r") + 1);
                             displayUsers(salon , pollFds[i].fd);
                         }
+						else if (message.find("DISPLAYCHANNELS") == 0) // <== DEBUG
+						{
+							displayChannels(pollFds[i].fd);
+						}
                         
                         else
                         {
