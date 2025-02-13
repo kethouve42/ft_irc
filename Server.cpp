@@ -356,6 +356,8 @@ void Server::join(std::string message, int user)
 
         send(user, namesMessage.c_str(), namesMessage.size(), 0);
         send(user, endNamesMessage.c_str(), endNamesMessage.size(), 0);
+        _channels[joinSalon].sendMessage(namesMessage, user);
+        _channels[joinSalon].sendMessage(endNamesMessage, user);
 
         // Envoi du topic s'il existe
         if (_channels[joinSalon].getTopic() != "")
