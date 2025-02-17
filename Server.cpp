@@ -394,7 +394,7 @@ void Server::join(std::string message, int user)
     }
 }
 
-/* Retire un user du salon */ /*Faire le message a l'user pour konversation*/
+/* Retire un user du salon */
 void Server::kick(std::string message, int user)
 {
 	std::string userKickName;
@@ -447,14 +447,15 @@ void Server::kick(std::string message, int user)
 	}
 	if (_channels[salon].VerifAdmin(user))
 	{
-
-		std::string partMessage = "NOTICE : " + fdToNickname(userKick) + " a été kick du salon '" + salon + "'\r\n";
-    	_channels[salon].sendMessage(partMessage, userKick);
+		std::string kickMessage = "NOTICE : " + fdToNickname(userKick) + " a été kick du salon '" + salon + "'\r\n";
+    	_channels[salon].sendMessage(kickMessage, userKick);
+        if (messageKick != " ")
+            kickMessage += "NOTICE : Message du kick: " + messageKick + "\r\n";
+        send(userKick, kickMessage.c_str(), kickMessage.size(), 0);
 		std::string userMessage = ":" + _user[userKick].getUserNickName() + " PART " + salon + " : Goodbye!\r\n";
-		send(userKick, userMessage.c_str(), userMessage.size(), 0); // <==== POURQUOI IL NE RECOIT PAS LE MESSAGE!!!!!
-		userMessage = "NOTICE : You've been kick of " + salon;
 		send(userKick, userMessage.c_str(), userMessage.size(), 0);
-
+		//userMessage = "NOTICE : You've been kick of " + salon;
+		//send(userKick, userMessage.c_str(), userMessage.size(), 0);
 		_channels[salon].deleteUser(userKick);
 		destroyChannel(salon);
 	}
@@ -696,10 +697,23 @@ void Server::mode(std::string message, int user)
 /* Retire le user du salon */
 void Server::part(std::string message, int user)
 {
+    std::string messagePart;
     std::string partSalon = message.substr(5);
+    if (partSalon.find(":") != std::string::npos)
+    {
+        size_t pos = partSalon.find(" ");
+        if (pos != std::string::npos)
+        {
+            std::string temp = partSalon.substr(0, pos);
+            std::string remaining = partSalon.substr(pos + 1);
+            messagePart = remaining;
+            partSalon = temp;
+        }
+        if (messagePart[0] == ':')  
+            messagePart.erase(0, 1);
+        messagePart.erase(messagePart.find_last_not_of(" \t\n\r") + 1);
+    }
     partSalon.erase(partSalon.find_last_not_of(" \t\n\r") + 1);
-    if (partSalon[0] == ':')
-        partSalon.erase(0, 1);
     if (partSalon.empty())
     {
         std::string errMessage = "NOTICE : Pas assez de paramètres.\n";
@@ -717,26 +731,12 @@ void Server::part(std::string message, int user)
 
     std::string partMessage = "NOTICE : " + fdToNickname(user) + " a quitte le salon '" + partSalon + "'\r\n";
     _channels[partSalon].sendMessage(partMessage, user);
+    if (messagePart != " ")
+        partMessage += "NOTICE : Message du Part: " + messagePart + "\r\n";
+    send(user, partMessage.c_str(), partMessage.size(), 0);
 	std::string userMessage = ":" + _user[user].getUserNickName() + " PART " + partSalon + " :Goodbye!\r\n";
 	send(user, userMessage.c_str(), userMessage.size(), 0);
     _channels[partSalon].deleteUser(user);
-
-	std::string namesMessage = ":server 353 " + _user[user].getUserNickName() + " = " + partSalon + " :";
-
-	std::vector<int> users = _channels[partSalon].getUsers();
-    std::vector<int>::iterator it;
-    for (it = users.begin(); it != users.end(); ++it)
-    {
-        namesMessage += _user[*it].getUserNickName() + " ";
-    }
-    namesMessage += "\r\n";
-		
-	std::string endNamesMessage = ":server 366 " + _user[user].getUserNickName() + " " + partSalon + " :End of /NAMES list\r\n";
-
-	// Envoyer la mise à jour à tous les utilisateurs restants
-	_channels[partSalon].sendMessage(namesMessage, user);
-	_channels[partSalon].sendMessage(endNamesMessage, user);
-
 	destroyChannel(partSalon);
     return;
 }
