@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/13 15:50:12 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/25 15:58:52 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,8 @@
 #include <map>
 #include <climits>
 #include <algorithm> 
+
+#include <stdio.h>
 
 #include "User.hpp"
 #include "Channels.hpp"
@@ -49,6 +51,21 @@ class Channels;
 
 class Server
 {
+	enum commands
+	{
+		NICK,
+		PRIVMSG,
+		JOIN,
+		KICK,
+		TOPIC,
+		INVITE,
+		MODE,
+		PART,
+		QUIT,
+		DISPLAYUSER,
+		DISPLAYCHANNELS
+	};
+
 	private:
 		std::string _serverPass;
 		sockaddr_in _serverAddr;
@@ -63,24 +80,31 @@ class Server
 		Server(int port, std::string pass);
 		~Server();
 		void	setServerSocket();
+		void	userConnection(std::string message, int i);
 		void	serverLoop();
-		void	join(std::string message, int user);
-		void	kick(std::string message, int user);
-		void	topic(std::string message, int user);
-		void	invite(std::string message, int user);
-		void	part(std::string message, int user);
-		void	quit(std::string message, int user);
-		void	mode(std::string message, int user);
-		void	destroyUser(const int user);
-		void	destroyChannel(std::string salon);
-		bool    nickExist(std::string nick);
-		void	nick(std::string message, size_t i);
-		void	privmsg(std::string message, size_t i);
-		void	user(std::string message, size_t i);
-		void	pass(std::string message, size_t i);
 		void	clearServ();
+
+		void	join(std::vector<std::string> message, int user);
+		void	kick(std::vector<std::string> message, int user);
+		void	topic(std::vector<std::string> message, int user);
+		void	invite(std::vector<std::string> message, int user);
+		void	part(std::vector<std::string> message, int user);
+		void	quit(std::vector<std::string> message, int user);
+		void	nick(std::vector<std::string> message, size_t i);
+		void	privmsg(std::vector<std::string> message, size_t i);
+		void	user(std::vector<std::string> message, size_t i);
+		void	pass(std::vector<std::string> message, size_t i);
+		void	mode(std::vector<std::string> message, int user);
+		
+		std::vector<std::string>	parseMessage(std::string message);
+		bool	isCommand(std::string message);
+		Server::commands findCommand(std::string command);
+		void	executeCommand(std::string message, int i);
+		bool    nickExist(std::string nick);
 		int		nicknameToFd(std::string nick);
 		std::string fdToNickname(int fd);
-		void	displayUsers(std::string salon, int sender);
+		void	destroyUser(const int user);
+		void	destroyChannel(std::string salon);
+		void	displayUsers(std::string message, int sender);
 		void	displayChannels(int sender);
 };

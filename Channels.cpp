@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/13 14:54:45 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/25 17:01:37 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,10 +68,6 @@ bool Channels::VerifInvited(const int user)
 	}
 	return false;
 }
-
-#ifdef _MSC_VER
-#pragma region Add/Remove
-#endif
 
 /* Ajoute le user au canal */
 int Channels::addUser(const int user)
@@ -153,14 +149,6 @@ void Channels::deleteUser(const int user)
 	if (VerifUser(user))
 		_user.erase(std::remove(_user.begin(), _user.end(), user), _user.end());
 }
-
-#ifdef _MSC_VER
-#pragma endregion
-#endif
-
-#ifdef _MSC_VER
-#pragma region Getters/Setters
-#endif
 
 /* Getters */
 bool Channels::getInvitMode()
@@ -324,7 +312,3 @@ void Channels::setRestrictedTopic(const std::string option, int user, std::strin
 		}
 	}
 }
-
-#ifdef _MSC_VER
-#pragma endregion
-#endif
