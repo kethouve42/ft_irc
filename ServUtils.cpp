@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:17:20 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/25 16:15:11 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:43:15 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,11 +31,11 @@ std::vector<std::string>	Server::parseMessage(std::string message)
 	if (!temp.empty()) args.push_back(temp);
 
 	/*DEBUG*/
-	std::cout << "Arguments:" << std::endl;
+	/*std::cout << "Arguments:" << std::endl;
 	for (size_t i = 0; i < args.size(); ++i)
 	{
 		std::cout << "args[" << i << "]: " << args[i] << std::endl;
-	}
+	}*/
 	return (args);
 
 }
@@ -95,7 +95,7 @@ void Server::displayUsers(std::string message, int sender)
 
 void Server::destroyUser(const int user)
 {
-    std::cout << "Client déconnecté : " << user << "\n";
+    std::cout << MAGENTA << "[SERVER] " << GREEN << "Client déconnecté : " << user << " " << _user[user].getUserNickName() << RESET << std::endl;
 	bool isClean = false;
 	while (!isClean)
 	{
@@ -130,7 +130,7 @@ void Server::destroyChannel(std::string salon)
 	if (_channels[salon].getUsers().size() <= 0)
 	{
 		_channels.erase(salon);
-		std::cout << RED << "Fermeture du salon " << salon << " faute d'utilisateur" << RESET << std::endl;
+		std::cout << MAGENTA << "[SERVER] " << RED << "Fermeture du salon " << salon << " faute d'utilisateur" << RESET << std::endl;
 	}
 }
 
@@ -207,8 +207,6 @@ void Server::executeCommand(std::string message, int i)
 				break;
 			
 			default:
-				/*std::string errorMsg = "NOTICE : Unknown command or invalid arguments: " + args[0];
-				send(pollFds[i].fd, errorMsg.c_str(), errorMsg.length(), 0);*/
 				break;
 		}
 		return ;
@@ -219,5 +217,4 @@ void Server::executeCommand(std::string message, int i)
 		send(pollFds[i].fd, errorMsg.c_str(), errorMsg.length(), 0);
 
 	}
-	std::cout << "SORTIE\n" << std::endl;
 }

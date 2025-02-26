@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:01:18 by kethouve          #+#    #+#             */
-/*   Updated: 2025/01/28 18:37:29 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/26 15:24:53 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,13 +19,13 @@ void signalHandler (int signal)
 {
 	if (signal == SIGINT) //Ctrl+C
 	{
-		std::cout << "\nSIGINT (Ctrl+C) reçu. Fermeture du programme..." << std::endl;
+		std::cout << RED << "\nSIGINT (Ctrl+C) reçu. Fermeture du programme..." << RESET << std::endl;
 		g_server->clearServ();
 		std::exit(0);
 	}
 	else if (signal == SIGTERM) //Demande de terminaison
 	{
-		std::cout << "\nSIGTERM reçu. Arrêt du programme..." << std::endl;
+		std::cout << RED << "\nSIGTERM reçu. Arrêt du programme..." << RESET << std::endl;
 		g_server->clearServ();
 		std::exit(0);
 	}
@@ -36,7 +36,7 @@ void signalHandler (int signal)
 	}
 	else if (signal == SIGQUIT) //Ctrl+'\'
 	{
-		std::cout << "\nSIGQUIT (Ctrl+'\') reçu. Fermeture du programme..." << std::endl;
+		std::cout << RED << "\nSIGQUIT (Ctrl+'\') reçu. Fermeture du programme..." << RESET << std::endl;
 		g_server->clearServ();
 		std::exit(0);
 	}
@@ -49,7 +49,7 @@ int	main(int ac, char **av)
 {
 	if(ac < 3)
 	{
-		std::cerr << "Error: usage ./ircserv <port> <password>" << std::endl;
+		std::cerr << RED << "Error: usage ./ircserv <port> <password>" << RESET << std::endl;
 		return 1;
 	}
 	std::signal(SIGINT, signalHandler);
@@ -61,6 +61,5 @@ int	main(int ac, char **av)
 	g_server = &server;
 	server.setServerSocket();
 	server.serverLoop();
-	std::cout << "HERE" << std::endl;
 	server.clearServ();
 }

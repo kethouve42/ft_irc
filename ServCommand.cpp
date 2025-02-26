@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:51:29 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/25 16:48:31 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:34:29 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,11 @@
 
 void Server::nick(std::vector<std::string> message, size_t i)
 {
-	/*std::string userNickName = message.substr(5);
-    userNickName.erase(userNickName.find_last_not_of(" \t\n\r") + 1);*/
 	if (message.size() < 2)
     {
         std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " NICK :Not enough parameters\r\n";
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[pollFds[i].fd].getUserNickName() << " has not enough argument." << RESET << std::endl;
         return;
     }
 	if (!nickExist(message[1]))
@@ -28,33 +27,25 @@ void Server::nick(std::vector<std::string> message, size_t i)
 			message[1].erase(0, 1);
 		std::string nickChanged = ":" + _user[pollFds[i].fd].getUserNickName() + " NICK " + message[1] + "\r\n";
 		send(pollFds[i].fd, nickChanged.c_str(), nickChanged.size(), 0);
+		if (_user[pollFds[i].fd].is_user == true)
+			std::cout << MAGENTA << "[SERVER] " << GREEN << _user[pollFds[i].fd].getUserNickName() << " successfuly change is nickname for " << message[1] << std::endl;
+		else
+			std::cout << MAGENTA << "[SERVER] " << GREEN << _user[pollFds[i].fd].getUserNickName() << " nickname is " << message[1] << std::endl;
 		_user[pollFds[i].fd].setUserNickName(message[1]);
 		_user[pollFds[i].fd].nick = true;
 	}
 	else
 	{
-		std::string errMessage = "NOTICE : " + message[1] + " existe deja trouvé un autre NickName!\r\n"; //trouver le code
+		std::string errMessage = "NOTICE : " + message[1] + " existe deja trouvé un autre NickName!\r\n";
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
-		std::cout << message[1] << " existe deja trouvé un autre NickName!" << std::endl;
+		std::cout << MAGENTA << "[SERVER] " << RED << message[1] << " existe deja. Echec du changement de nickname!" << RESET << std::endl;
 		return;
 	}
 }
 
 void Server::privmsg(std::vector<std::string> message, size_t i)
 {
-	std::cout << "PRIVMSG\n";
 	std::string salon, msgContent;
-	/*std::string temp;
-	std::string salon;
-	std::string msgContent;*/
-   /*size_t pos = message.find(" ");
-    if (pos != std::string::npos)
-    {
-        temp = message.substr(8, pos - 8);
-        size_t pos = temp.find(" ");
-        salon = temp.substr(0, pos);
-        msgContent = temp.substr(pos + 1);
-    }*/
 
 	salon = message[1];
 	if (message.size() > 2)
@@ -69,11 +60,11 @@ void Server::privmsg(std::vector<std::string> message, size_t i)
     {
         std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " PRIVMSG :Not enough parameters\r\n";
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[pollFds[i].fd].getUserNickName() << " has not enough argument." << RESET << std::endl;
         return;
     }
     if (msgContent[0] == ':')
         msgContent.erase(0, 1);
-    std::cout << "msg :" << msgContent << "salon :" << salon << "\n";
     if (salon[0] == '#')
     {
         if (_channels[salon].VerifUser(pollFds[i].fd) == true)
@@ -83,9 +74,10 @@ void Server::privmsg(std::vector<std::string> message, size_t i)
                         << salon << " :" << msgContent << "\r\n";
             std::string messageToSend = messageStream.str();
             _channels[salon].sendMessage(messageToSend, pollFds[i].fd);
+			std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] in " << salon << RESET << BOLD << ": " << msgContent << std::endl;
         }
         else
-            std::cout << "no user of :" << salon << "\n";//faire le message si le user envois un message dans un channel mais est pas a l'interieur
+            std::cout << MAGENTA << "[SERVER] " << RED << _user[pollFds[i].fd].getUserNickName() << " is not a user of :" << salon << RESET << std::endl;
     }
     else
     {
@@ -100,6 +92,7 @@ void Server::privmsg(std::vector<std::string> message, size_t i)
                     << " :" << msgContent << "\r\n";
                 std::string messageToSend = messageStream.str();
                 send(it->first, messageToSend.c_str(), messageToSend.size(), 0);
+				std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] to " << salon << RESET << BOLD << ": " << msgContent << std::endl;
                 return;
             }
         }
@@ -107,6 +100,7 @@ void Server::privmsg(std::vector<std::string> message, size_t i)
         std::string errMessage = ":server 401 " + _user[pollFds[i].fd].getUserNickName() + 
             " " + salon + " :No such nick/channel\r\n";
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << salon << " not found. Send fail!" << RESET << std::endl;
     }
 }
 
@@ -122,55 +116,31 @@ void Server::user(std::vector<std::string> message, size_t i)
 	if(message.size() > 2) hostname = message[2];
 	if(message.size() > 3) servername = message[3];
 	if(message.size() > 4) realname = message[4];
-
-    /*size_t start = 5;
-    size_t pos = message.find(" ", start);
-    if (pos != std::string::npos)
-    {
-        username = message.substr(start, pos - start);
-        start = pos + 1;
-
-        pos = message.find(" ", start);
-        if (pos != std::string::npos)
-        {
-            hostname = message.substr(start, pos - start);
-            start = pos + 1;
-
-            pos = message.find(" ", start);
-            if (pos != std::string::npos)
-            {
-                servername = message.substr(start, pos - start);
-                start = pos + 1;
-                realname = message.substr(start);
-            }
-        }
-    }*/
     if (realname.size() != 0)
     {
-		std::cout << "\ni: " << pollFds[i].fd << "\n" << std::endl;
         if (realname[0] == ':')
             realname.erase(0, 1);
         _user[pollFds[i].fd].setUserRealname(realname);
         _user[pollFds[i].fd].setUserName(username);
         _user[pollFds[i].fd].user = true;
+		std::cout << MAGENTA << "[SERVER] " << GREEN << "Real name set" << RESET << std::endl;
     }
-    else /* problemme si la commande user est reutilisé correctement ou non */
+    else
     {
-		std::cout << "\ni: " << pollFds[i].fd << "\n" << std::endl; // SOUCIS avec pollFds (invalid read) attribué sur server.cpp ligne 115
         std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " USER :Not enough parameters\r\n";
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[pollFds[i].fd].getUserNickName() << " has not enough argument." << RESET << std::endl;
         return;
     }
 }
 
 void Server::pass(std::vector<std::string> message, size_t i)
 {
-	/*std::string userPass = message.substr(5);
-    userPass.erase(userPass.find_last_not_of(" \t\n\r") + 1);*/
     if (message.size() < 2)
     {
         std::string errMessage = ":server 461 " + _user[pollFds[i].fd].getUserNickName() + " PASS :Not enough parameters\r\n";
         send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[pollFds[i].fd].getUserNickName() << " has not enough argument." << RESET << std::endl;
         return;
     }
     if (message[1][0] == ':')
@@ -197,37 +167,28 @@ void Server::join(std::vector<std::string> message, int user)
 
 	if (message.size() > 1) joinSalon = message[1];
 	if (message.size() > 2) passWord = message[2];
-    /*size_t pos = message.find(" ");
-    if (pos != std::string::npos)
-    {
-        std::string temp = message.substr(5);
-        size_t pos = temp.find(" ");
-        joinSalon = temp.substr(0, pos);
-        passWord = temp.substr(pos + 1);
-    }
-    joinSalon.erase(joinSalon.find_last_not_of(" \t\n\r") + 1);
-    passWord.erase(passWord.find_last_not_of(" \t\n\r") + 1);*/
     if (passWord[0] == ':')
         passWord.erase(0, 1);
-    std::cout << "JoinSalon : '" << joinSalon << "'\nPassword : '" << passWord << "'\n";
 
     // Salon vide
     if (joinSalon.empty() || joinSalon[0] != '#')
     {
         std::string errMessage = ":server 461 " + nickname + " JOIN :Not enough parameters\r\n";
         send(user, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[pollFds[user].fd].getUserNickName() << " has not enough argument." << RESET << std::endl;
         return;
     }
 
     // Création de salon
     if (_channels.find(joinSalon) == _channels.end())
     {
-        std::cout << "Salon " << joinSalon << " créé" << std::endl;
+        std::cout << MAGENTA << "[SERVER] " << GREEN << "Salon " << joinSalon << " créé" << RESET << std::endl;
         Channels nouveauSalon(joinSalon, user);
         _channels[joinSalon] = nouveauSalon;
 
         std::string createMessage = ":" + nickname + " JOIN :" + joinSalon + "\r\n";
         send(user, createMessage.c_str(), createMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << GREEN << _user[user].getUserNickName() << " a rejoint le salon " << joinSalon << RESET << std::endl;
         return;
     }
 
@@ -235,6 +196,7 @@ void Server::join(std::vector<std::string> message, int user)
     {
         std::string fullMessage = ":server 471 " + nickname + " " + joinSalon + " :Channel is full\r\n";
         send(user, fullMessage.c_str(), fullMessage.size(), 0);
+		std::cout << "[SERVER] " << RED << _user[user].getUserNickName() << " ne peut pas rejoindre " << joinSalon << " puisqu'il est plein" << RESET << std::endl;
         return;
     }
 
@@ -244,17 +206,19 @@ void Server::join(std::vector<std::string> message, int user)
         {
             std::string fullMessage = ":server 471 " + nickname + " " + joinSalon + " :Wrong password\r\n";
             send(user, fullMessage.c_str(), fullMessage.size(), 0);
+			std::cout << "[SERVER] " << RED << _user[user].getUserNickName() << " ne peut pas rejoindre " << joinSalon << " mauvais password" << RESET << std::endl;
             return ;
         }
     }
 
     // Ajout de l'utilisateur au salon
-    if (_channels[joinSalon].addUser(user) == 0)
+    if (_channels[joinSalon].addUser(user, fdToNickname(user)) == 0)
     {
 
         std::string joinMessage = ":" + nickname + " JOIN :" + joinSalon + "\r\n";
         send(user, joinMessage.c_str(), joinMessage.size(), 0);
         _channels[joinSalon].sendMessage(joinMessage, user);
+		std::cout << MAGENTA << "[SERVER] " << GREEN << _user[user].getUserNickName() << " a rejoit le salon " << joinSalon << RESET << std::endl;
 
         // Construction de la liste des utilisateurs
         std::string namesMessage = ":server 353 " + nickname + " = " + joinSalon + " :";
@@ -267,7 +231,7 @@ void Server::join(std::vector<std::string> message, int user)
         namesMessage += "\r\n";
 
         // Fin de la liste des utilisateurs
-        std::string endNamesMessage = ":server 366 " + nickname + " " + joinSalon + " :End of /NAMES list\r\n"; // <== WHY ???
+        std::string endNamesMessage = ":server 366 " + nickname + " " + joinSalon + " :End of /NAMES list\r\n";
 
         send(user, namesMessage.c_str(), namesMessage.size(), 0);
         send(user, endNamesMessage.c_str(), endNamesMessage.size(), 0);
@@ -302,30 +266,6 @@ void Server::kick(std::vector<std::string> message, int user)
 			messageKick += message[i];
 		}
 	}
-
-	/*size_t pos = message.find(" ");
-    if (pos != std::string::npos)
-    {
-        std::string temp = message.substr(5);
-        size_t pos = temp.find(" ");
-        salon = temp.substr(0, pos);
-        userKickName = temp.substr(pos + 1);
-    }
-    if (userKickName.find(":") != std::string::npos)
-    {
-        size_t pos = userKickName.find(" ");
-        if (pos != std::string::npos)
-        {
-            std::string temp = userKickName.substr(0, pos);
-            std::string remaining = userKickName.substr(pos + 1);
-            messageKick = remaining;
-            userKickName = temp;
-        }
-        if (messageKick[0] == ':')  
-            messageKick.erase(0, 1);
-    }
-    userKickName.erase(userKickName.find_last_not_of(" \t\n\r") + 1);
-    messageKick.erase(messageKick.find_last_not_of(" \t\n\r") + 1);*/
 	std::istringstream ss(userKickName);
 	int userKick;
     ss >> userKick;
@@ -343,7 +283,7 @@ void Server::kick(std::vector<std::string> message, int user)
         }
         if (!userFound)
         {
-            std::cerr << "Utilisateur avec nickname ou ID " << userKickName << " introuvable.\n";
+            std::cerr << MAGENTA << "[SERVER] " << RED << "Utilisateur avec nickname ou ID " << userKickName << " introuvable." << RESET << std::endl;
             return;
         }
 	}
@@ -356,8 +296,7 @@ void Server::kick(std::vector<std::string> message, int user)
         send(userKick, kickMessage.c_str(), kickMessage.size(), 0);
 		std::string userMessage = ":" + _user[userKick].getUserNickName() + " PART " + salon + " : Goodbye!\r\n";
 		send(userKick, userMessage.c_str(), userMessage.size(), 0);
-		//userMessage = "NOTICE : You've been kick of " + salon;
-		//send(userKick, userMessage.c_str(), userMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << GREEN << fdToNickname(userKick) << " a été kick du salon " << salon << RESET << std::endl;
 		_channels[salon].deleteUser(userKick);
 		destroyChannel(salon);
 	}
@@ -365,11 +304,13 @@ void Server::kick(std::vector<std::string> message, int user)
     {
         std::string notAdmin = "NOTICE : No permission for kick in " + salon + "\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << fdToNickname(user) << " n'est pas admin du salon " << salon << RESET << std::endl;
     }
     else
     {
         std::string notAdmin = "NOTICE : Error occurred in the request\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << fdToNickname(user) << " ERREUR" << RESET << std::endl;
     }
 }
 
@@ -387,26 +328,11 @@ void Server::part(std::vector<std::string> message, int user)
 			messagePart += message[i];
 		}
 	}
-    /*std::string partSalon = message.substr(5);
-    if (partSalon.find(":") != std::string::npos)
-    {
-        size_t pos = partSalon.find(" ");
-        if (pos != std::string::npos)
-        {
-            std::string temp = partSalon.substr(0, pos);
-            std::string remaining = partSalon.substr(pos + 1);
-            messagePart = remaining;
-            partSalon = temp;
-        }
-        if (messagePart[0] == ':')  
-            messagePart.erase(0, 1);
-        messagePart.erase(messagePart.find_last_not_of(" \t\n\r") + 1);
-    }
-    partSalon.erase(partSalon.find_last_not_of(" \t\n\r") + 1);*/
     if (partSalon.empty())
     {
         std::string errMessage = "NOTICE : Pas assez de paramètres.\n";
         send(user, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[user].getUserNickName() << " has not enough argument." << RESET << std::endl;
         return ;
     }
 
@@ -415,6 +341,7 @@ void Server::part(std::vector<std::string> message, int user)
         std::cout << "Le salon " << partSalon << " n'existe pas" << std::endl;
 		std::string notExisting = "NOTICE : This channel doesn't exist\r\n";
         send(user, notExisting.c_str(), notExisting.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "Salon " << partSalon << " n'existe pas" << RESET << std::endl;
         return;
     }
 
@@ -426,6 +353,7 @@ void Server::part(std::vector<std::string> message, int user)
 	std::string userMessage = ":" + _user[user].getUserNickName() + " PART " + partSalon + " :Goodbye!\r\n";
 	send(user, userMessage.c_str(), userMessage.size(), 0);
     _channels[partSalon].deleteUser(user);
+	std::cout << MAGENTA << "[SERVER] " << GREEN << _user[user].getUserNickName() << " a quitté le salon " << partSalon << RESET << std::endl;
 	destroyChannel(partSalon);
     return;
 }
@@ -441,8 +369,6 @@ void Server::quit(std::vector<std::string> message, int user)
 			quitMessage += message[i];
 		}
 	}
-    /*std::string quitMessage = message.substr(5);
-    quitMessage.erase(quitMessage.find_last_not_of(" \t\n\r") + 1);*/
     if (quitMessage[0] == ':')
         quitMessage.erase(0, 1);
     if (!quitMessage.empty())
@@ -464,18 +390,9 @@ void Server::invite(std::vector<std::string> message, int user)
 
 	if (message.size() > 1) salon = message[1];
 	if (message.size() > 2) userInviteName = message[2];
-	/*size_t pos = message.find(" ");
-    if (pos != std::string::npos)
-    {
-        std::string temp = message.substr(7);
-        size_t pos = temp.find(" ");
-        salon = temp.substr(0, pos);
-        userInviteName = temp.substr(pos + 1);
-    }*/
-
     if (_channels.find(salon) == _channels.end())
     {
-        std::cout << "Le salon " << salon << " n'existe pas" << std::endl;
+        std::cout << MAGENTA << "[SERVER] " << RED << "Le salon " << salon << " n'existe pas" << RESET << std::endl;
 		std::string notExisting = "NOTICE : This channel doesn't exist\r\n";
         send(user, notExisting.c_str(), notExisting.size(), 0);
         return;
@@ -490,7 +407,7 @@ void Server::invite(std::vector<std::string> message, int user)
         userInvite = nicknameToFd(userInviteName);
         if (userInvite == -1)
         {
-            std::cerr << "Utilisateur avec nickname ou ID " << userInviteName << " introuvable.\n";
+            std::cerr << MAGENTA << "[SERVER] " << RED << "Utilisateur avec nickname ou ID " << userInviteName << " introuvable." << RESET << std::endl;
 			std::string notUser = "NOTICE : user " + userInviteName + " not found \r\n";
         	send(user, notUser.c_str(), notUser.size(), 0);
             return;
@@ -498,11 +415,12 @@ void Server::invite(std::vector<std::string> message, int user)
 	}
 
     if (_channels[salon].VerifUser(user))
-        _channels[salon].addInvited(userInvite);
+        _channels[salon].addInvited(userInvite, fdToNickname(user), fdToNickname(userInvite));
     else
 	{
 		std::string notMember = "NOTICE : You're not a member of this channel, you can't invit\r\n";
         send(user, notMember.c_str(), notMember.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << _user[user].getUserNickName() << " n'est pas membre du salon " << salon << RESET << std::endl;
 	}
 
 }
@@ -521,32 +439,11 @@ void Server::topic(std::vector<std::string> message, int user)
 			newTopic += message[i];
 		}
 	}
-
-    /*message.erase(0, message.find_first_not_of(" \t\n\r"));
-    message.erase(message.find_last_not_of(" \t\n\r") + 1);
-
-    size_t pos = message.find(" ");
-    if (pos != std::string::npos)
-    {
-        std::string temp = message.substr(pos + 1);
-
-        temp.erase(0, temp.find_first_not_of(" \t\n\r"));
-        temp.erase(temp.find_last_not_of(" \t\n\r") + 1);
-
-        size_t spacePos = temp.find(" ");
-        salon = temp.substr(0, spacePos);
-
-        if (spacePos != std::string::npos)
-        {
-            newTopic = temp.substr(spacePos + 1);
-            newTopic.erase(newTopic.find_last_not_of(" \t\n\r") + 1);
-        }
-    }*/
     if (newTopic[0] == ':')
         newTopic.erase(0, 1);
     if (_channels.find(salon) == _channels.end())
     {
-        std::cout << "Le salon " << salon << " n'existe pas" << std::endl;
+        std::cout << MAGENTA << "[SERVER] " << RED << "impossible de changer le topic. Le salon " << salon << " n'existe pas" << RESET << std::endl;
         return;
     }
 
@@ -554,6 +451,7 @@ void Server::topic(std::vector<std::string> message, int user)
     {
         std::string notMember = "NOTICE : " + _user[user].getUserNickName() + " Topic available only to members of " + salon + "\r\n";
         send(user, notMember.c_str(), notMember.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << "impossible de changer le topic." << fdToNickname(user)  << " n'est pa membre du salon " << salon << RESET << std::endl;
         return;
     }
 
@@ -571,6 +469,7 @@ void Server::topic(std::vector<std::string> message, int user)
     {
         std::string notAdmin = "NOTICE : No permission to change topic on " + salon + "\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << fdToNickname(user) << " n'est pas admin du salon " << salon << RESET << std::endl;
     }
     else
     {
@@ -599,47 +498,9 @@ void Server::mode(std::vector<std::string> message, int user)
 			param += message[i];
 		}
 	}
-	std::cout << "MODE ARG:\nsalon: " << salon << " commande: " << commande << " param: " << param << std::endl;
-
-    /*message.erase(0, message.find_first_not_of(" \t\n\r"));
-    message.erase(message.find_last_not_of(" \t\n\r") + 1);
-    
-    size_t pos = message.find(" ");
-    if (pos != std::string::npos)
-    {
-        std::string temp = message.substr(pos + 1);
-        temp.erase(0, temp.find_first_not_of(" \t\n\r"));
-        temp.erase(temp.find_last_not_of(" \t\n\r") + 1);
-
-        size_t spacePos = temp.find(" ");
-        salon = temp.substr(0, spacePos);
-    
-        if (spacePos != std::string::npos)
-        {
-            std::string rest = temp.substr(spacePos + 1);
-            rest.erase(0, rest.find_first_not_of(" \t\n\r"));
-            rest.erase(rest.find_last_not_of(" \t\n\r") + 1);
-    
-            size_t secondSpacePos = rest.find(" ");
-            commande = rest.substr(0, secondSpacePos);
-    
-            if (secondSpacePos != std::string::npos)
-            {
-                param = rest.substr(secondSpacePos + 1);
-                param.erase(0, param.find_first_not_of(" \t\n\r"));
-                param.erase(param.find_last_not_of(" \t\n\r") + 1);
-            }
-        }
-    }*/
-    // Debug : Afficher les parties extraites
-    /*
-    std::cout << "Salon : '" << salon << "'\n";
-    std::cout << "Commande : '" << commande << "'\n";
-    std::cout << "Paramètre : '" << param << "'\n";*/
-
     if (_channels.find(salon) == _channels.end())
     {
-        std::cout << "Le salon " << salon << " n'existe pas" << std::endl;
+        std::cout << MAGENTA << "[SERVER] " << RED << "Le salon " << salon << " n'existe pas" << RESET << std::endl;
 		std::string notExisting = "NOTICE : This channel doesn't exist\r\n";
         send(user, notExisting.c_str(), notExisting.size(), 0);
         return;
@@ -650,6 +511,7 @@ void Server::mode(std::vector<std::string> message, int user)
     {
         std::string notAdmin = "NOTICE : " + salon + " only admins can use MODE (so you're not)\r\n";
         send(user, notAdmin.c_str(), notAdmin.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << RED << fdToNickname(user) << " n'est pas admin du salon " << salon << RESET << std::endl;
         return;
     }
 
@@ -674,15 +536,15 @@ void Server::mode(std::vector<std::string> message, int user)
         if(_channels[salon].VerifUser(nicknameToFd(param)) > 0)
         {
             if(commande == "+o")
-                _channels[salon].addAdmin(nicknameToFd(param));
+                _channels[salon].addAdmin(nicknameToFd(param), fdToNickname(user), param);
             else if (param != fdToNickname(user))
                 _channels[salon].removeAdmin(nicknameToFd(param));
         }
         else
 		{
-            std::cout << param << " not found" << std::endl;
 			std::string noParam = "NOTICE : Not enough parameters: <MODE> <channel> <parameter> <username>\r\n";
         	send(user, noParam.c_str(), noParam.size(), 0);
+			std::cout << MAGENTA << "[SERVER] " << RED << "Message of " << _user[pollFds[user].fd].getUserNickName() << " has not enough argument." << RESET << std::endl;
 		}
     }
     else if (commande == "+l" && !param.empty())

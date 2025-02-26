@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:27:28 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/13 14:53:40 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:33:01 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,12 +33,12 @@ public:
 	Channels(std::string name, int fdCreator);
 	~Channels();
 	void sendMessage(std::string message, int sender);
-	void addAdmin(int userFD);
+	void addAdmin(int userFD, std::string sender, std::string invited);
 	bool VerifAdmin(int userFd);
 	bool VerifUser(int userFd);
 	bool VerifInvited(const int user);
-	int addUser(const int user);
-	void addInvited(const int user);
+	int addUser(const int user, std::string added);
+	void addInvited(const int user, std::string sender, std::string userInvited);
 	void removeInvited(const int user);
 	void removeAdmin(const int user);
 	void deleteUser(const int user);

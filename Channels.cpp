@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/25 17:01:37 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:33:11 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ bool Channels::VerifInvited(const int user)
 }
 
 /* Ajoute le user au canal */
-int Channels::addUser(const int user)
+int Channels::addUser(const int user, std::string added)
 {
 	if (!VerifUser(user) && !_invitMode)
 		_user.push_back(user);
@@ -85,6 +85,7 @@ int Channels::addUser(const int user)
 		{
 			std::string message = "this channel is on invitation and you don't have an invitation\n";
 			send(user, message.c_str(), message.size(), 0);
+			std::cout << MAGENTA << "[SERVER] " << RED << added << " is not invited on " << _channelName << RESET << std::endl;
 			return 1;
 		}
 	}
@@ -92,37 +93,40 @@ int Channels::addUser(const int user)
 	{
 			std::string message = "You are already in this channel\n";
 			send(user, message.c_str(), message.size(), 0);
+			std::cout << MAGENTA << "[SERVER] " << RED << added << " is already on " << _channelName << RESET << std::endl;
 			return 1;
 	}
 	return 0;
 }
 
 /* Ajoute le user sur liste d'invitation */
-void Channels::addInvited(const int user)
+void Channels::addInvited(const int user, std::string sender, std::string userInvited)
 {
 	if (!_invitMode || VerifInvited(user) || VerifUser(user))
 	{
-		std::cout << "error inviting :\nInvite mode = " << _invitMode << " \nVerifInvited = " << VerifInvited(user) << " \nVerifUser = " << VerifUser(user) << std::endl;
+		std::cout << MAGENTA << "[SERVER] " << RED << "Error inviting :\nInvite mode = " << _invitMode << " \nVerifInvited = " << VerifInvited(user) << " \nVerifUser = " << VerifUser(user) << RESET << std::endl;
 		return;
 	}
 	
 	this->_invited.push_back(user);
 	
-	std::string invited = ":server Vous avez ete invite sur le salon '" + _channelName + "'\n";
+	std::string invited = ":server Vous avez ete invite sur le salon '" + _channelName + "' \r\n";
     send(user, invited.c_str(), invited.size(), 0);
+	std::cout << MAGENTA << "[SERVER] " << GREEN << sender << " a invité " << userInvited << " sur le salon " << _channelName << RESET << std::endl;
 }
 
 /* Passe le user en admin du canal */
-void Channels::addAdmin(int userFd)
+void Channels::addAdmin(int userFd, std::string sender, std::string invited)
 {
 	if (!VerifAdmin(userFd))
 	{
 		_admins.push_back(userFd);
-		std::string admined = ":server Vous avez ete promu admin sur '" + _channelName + "' !\n";
+		std::string admined = ":server Vous avez ete promu admin sur '" + _channelName + "' ! \r\n";
     	send(userFd, admined.c_str(), admined.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << GREEN << invited << " est promu admin sur le salon " << _channelName << "par " << sender << RESET << std::endl;
 	}
 	else
-		std::cout << "user already admin" << std::endl;
+		std::cout << MAGENTA << "[SERVER] " << RED << invited << " est deja admin" << RESET << std::endl;
 }
 
 /* Supprime le user de la liste d'invitation */
@@ -137,8 +141,6 @@ void Channels::removeAdmin(const int user)
 {
 	if (VerifAdmin(user))
 		_admins.erase(std::remove(_admins.begin(), _admins.end(), user), _admins.end());
-	//else
-		//std::cout << "user already not admin" << std::endl;
 }
 
 /* Supprime le user du canal */
@@ -198,7 +200,7 @@ void Channels::setUserLimit(const int limit, int user)
 	std::ostringstream ss;
 	ss << limit;
 	std::string newlimit = ss.str();
-	std::cout << this->_channelName << " new user limit is " << this->_userLimit << std::endl;
+	std::cout << MAGENTA << "[SERVER] " << GREEN << this->_channelName << " new user limit is " << this->_userLimit << RESET << std::endl;
 	if (this->_userLimit != INT_MAX)
 	{
 		std::string Seted = "NOTICE" + this->_channelName + " : user limit is set at: " + newlimit + "\r\n";
@@ -214,7 +216,8 @@ void Channels::setUserLimit(const int limit, int user)
 void Channels::setTopic(const std::string newTopic, int user)
 {
 	this->_channelTopic = newTopic;
-	std::cout << this->_channelName << " new topic is " << this->_channelTopic << std::endl;
+	std::cout << this->_channelName << " new topic is " << this->_channelTopic << RESET << std::endl;
+	std::cout << MAGENTA << "[SERVER] " << GREEN << "Nouveau topic du salon " << this->_channelName << ": " << _channelTopic << RESET << std::endl;
 	std::string Seted = "NOTICE" + this->_channelName + " topic is now: " + this->_channelTopic + "\r\n";
     send(user, Seted.c_str(), Seted.size(), 0);
 }
@@ -224,14 +227,14 @@ void Channels::setChannelPass(const std::string password, int user)
 	this->_channelPass = password;
 	if (!password.empty())
 	{
-		std::cout << "New pass: " << this->_channelPass << std::endl;
-		std::cout << "Password '" << password << "' set for channel '" << this->_channelName << "'" << std::endl;
+		std::cout << MAGENTA << "[SERVER] " << GREEN << "New pass: " << this->_channelPass << RESET << std::endl;
+		std::cout << MAGENTA << "[SERVER] " << GREEN << "Password '" << password << "' set for channel '" << this->_channelName << "'" << RESET << std::endl;
 		std::string Seted = "NOTICE" + this->_channelName + " : has a password set\r\n";
         send(user, Seted.c_str(), Seted.size(), 0);
 	}
 	else
 	{
-		std::cout << "Channel '" << this->_channelName << "' has no password"<< std::endl;
+		std::cout << MAGENTA << "[SERVER] " << GREEN << "Channel '" << this->_channelName << "' has no password" << RESET << std::endl;
 		std::string Seted = "NOTICE" + this->_channelName + " : password unset\r\n";
         send(user, Seted.c_str(), Seted.size(), 0);
 	}
@@ -243,7 +246,7 @@ void Channels::setInvitationMode(const std::string option, int user)
 	{
 		if (_invitMode)
 		{
-			std::cout << "channel already set on ivitation mode" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << RED << "channel already set on ivitation mode" << RESET << std::endl;
 			std::string alreadySet = "NOTICE " + this->_channelName + " : already set on ivitation mode\r\n";
         	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 			return;
@@ -251,7 +254,7 @@ void Channels::setInvitationMode(const std::string option, int user)
 		else
 		{
 			this->_invitMode = true;
-			std::cout << this->_channelName << " is now on invitation mode" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << GREEN << this->_channelName << " is now on invitation mode" << RESET << std::endl;
 			std::string Seted = "NOTICE" + this->_channelName + " : is now on invitation mode\r\n";
         	send(user, Seted.c_str(), Seted.size(), 0);
 		}
@@ -260,7 +263,7 @@ void Channels::setInvitationMode(const std::string option, int user)
 	{
 		if (_invitMode == false)
 		{
-			std::cout << "channel is not on ivitation mode" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << RED << "channel is not on ivitation mode" << RESET << std::endl;
 			std::string Seted = "NOTICE" + this->_channelName + " : is not on invitation mode\r\n";
         	send(user, Seted.c_str(), Seted.size(), 0);
 			return;
@@ -268,7 +271,7 @@ void Channels::setInvitationMode(const std::string option, int user)
 		else
 		{
 			this->_invitMode = false;
-			std::cout << this->_channelName << " invitation mode desactivated" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << GREEN << this->_channelName << " invitation mode desactivated" << RESET << std::endl;
 			std::string Seted = "NOTICE" + this->_channelName + " : is no more on invitation mode\r\n";
         	send(user, Seted.c_str(), Seted.size(), 0);
 		}
@@ -281,7 +284,7 @@ void Channels::setRestrictedTopic(const std::string option, int user, std::strin
 	{
 		if (_restrictedTopic)
 		{
-			std::cout << "topic already set on admin only" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << RED << "topic already set on admin only" << RESET << std::endl;
 			std::string alreadySet = "NOTICE " + nickName + " : Topic is already set on admin only\r\n";
         	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 			return;
@@ -289,7 +292,7 @@ void Channels::setRestrictedTopic(const std::string option, int user, std::strin
 		else
 		{
 			this->_restrictedTopic = true;
-			std::cout << this->_channelName << " topic is now on admin only" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << GREEN << this->_channelName << " topic is now on admin only" << RESET << std::endl;
 			std::string alreadySet = "NOTICE " + nickName + " : Topic is now set on admin only\r\n";
         	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 		}
@@ -298,7 +301,7 @@ void Channels::setRestrictedTopic(const std::string option, int user, std::strin
 	{
 		if (_restrictedTopic == false)
 		{
-			std::cout << "topic is already not on admin only" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << RED << "topic is already not on admin only" << RESET << std::endl;
 			std::string alreadySet = "NOTICE " + nickName + " : Topic is already not on admin only\r\n";
         	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 			return;
@@ -306,7 +309,7 @@ void Channels::setRestrictedTopic(const std::string option, int user, std::strin
 		else
 		{
 			this->_restrictedTopic = false;
-			std::cout << this->_channelName << " topic can be change by everyone now" << std::endl;
+			std::cout << MAGENTA << "[SERVER] " << GREEN << this->_channelName << " topic can be change by everyone now" << RESET << std::endl;
 			std::string alreadySet = "NOTICE " + nickName + " : Topic is no more on admin only\r\n";
         	send(user, alreadySet.c_str(), alreadySet.size(), 0);
 		}
