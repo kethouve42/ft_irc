@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/25 15:58:52 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 16:38:25 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
 
 #include "User.hpp"
 #include "Channels.hpp"
+#include "Bot.hpp"
 
 #define BUFFER_SIZE 1024
 
@@ -48,6 +49,7 @@ const std::string RESET =	"\033[0m";
 
 class User;
 class Channels;
+class Bot;
 
 class Server
 {
@@ -75,6 +77,7 @@ class Server
 		std::map<std::string, Channels> _channels;
 		std::map<int, std::string> clientBuffers;
 		std::vector<pollfd> pollFds;
+		Bot *_bot;
 		Server();
 	public:
 		Server(int port, std::string pass);
@@ -107,4 +110,6 @@ class Server
 		void	destroyChannel(std::string salon);
 		void	displayUsers(std::string message, int sender);
 		void	displayChannels(int sender);
+		std::map<std::string, Channels> getServChannels();
+		int		getServerFd();
 };

@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:51:29 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/26 17:34:29 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 17:30:06 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,9 +47,9 @@ void Server::privmsg(std::vector<std::string> message, size_t i)
 {
 	std::string salon, msgContent;
 
-	salon = message[1];
 	if (message.size() > 2)
 	{
+		salon = message[1];
 		for (size_t i = 2; i < message.size(); ++i)
 		{
 			if (!msgContent.empty()) msgContent += " ";
@@ -124,6 +124,8 @@ void Server::user(std::vector<std::string> message, size_t i)
         _user[pollFds[i].fd].setUserName(username);
         _user[pollFds[i].fd].user = true;
 		std::cout << MAGENTA << "[SERVER] " << GREEN << "Real name set" << RESET << std::endl;
+		std::string userReply = ":server 001 " + message[1] + " :Welcome to the IRC Server!\r\n";
+    	send(pollFds[i].fd, userReply.c_str(), userReply.size(), 0);
     }
     else
     {
@@ -218,6 +220,14 @@ void Server::join(std::vector<std::string> message, int user)
         std::string joinMessage = ":" + nickname + " JOIN :" + joinSalon + "\r\n";
         send(user, joinMessage.c_str(), joinMessage.size(), 0);
         _channels[joinSalon].sendMessage(joinMessage, user);
+		//Bot begin
+		if (!_channels[joinSalon].VerifUser(_bot->botFd))
+		{
+			_channels[joinSalon].addUser(_bot->botFd, _user[_bot->botFd].getUserNickName());
+			std::cout << MAGENTA << "[SERVER] " << GREEN << _user[_bot->botFd].getUserNickName() << " a rejoit le salon " << joinSalon << RESET << std::endl;
+		}
+		_bot->Welcome(user, _user[user].getUserNickName(), joinSalon);
+		//Bot end
 		std::cout << MAGENTA << "[SERVER] " << GREEN << _user[user].getUserNickName() << " a rejoit le salon " << joinSalon << RESET << std::endl;
 
         // Construction de la liste des utilisateurs
@@ -428,15 +438,19 @@ void Server::invite(std::vector<std::string> message, int user)
 /* Afficher ou changer le sujet d'un salon */
 void Server::topic(std::vector<std::string> message, int user)
 {
-	std::string salon = message[1];
+	std::string salon;
 	std::string newTopic;
 
-	if (message.size() > 2)
+	if (message.size() > 1)
 	{
-		for (size_t i = 2; i < message.size(); ++i)
+		salon = message[1];
+		if (message.size() > 2)
 		{
-			if (!newTopic.empty()) newTopic += " ";
-			newTopic += message[i];
+			for (size_t i = 2; i < message.size(); ++i)
+			{
+				if (!newTopic.empty()) newTopic += " ";
+				newTopic += message[i];
+			}
 		}
 	}
     if (newTopic[0] == ':')
@@ -488,14 +502,17 @@ void Server::mode(std::vector<std::string> message, int user)
     std::string salon;
     std::string param;
 
-	salon = message[1];
-	if (message.size() > 2)
+	if (message.size() > 1)
 	{
-		commande = message[2];
-		for (size_t i = 3; i < message.size(); ++i)
+		salon = message[1];
+		if (message.size() > 2)
 		{
-			if (!param.empty()) param += " ";
-			param += message[i];
+			commande = message[2];
+			for (size_t i = 3; i < message.size(); ++i)
+			{
+				if (!param.empty()) param += " ";
+				param += message[i];
+			}
 		}
 	}
     if (_channels.find(salon) == _channels.end())

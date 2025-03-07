@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:17:20 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/26 17:43:15 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 16:56:26 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,3 +218,15 @@ void Server::executeCommand(std::string message, int i)
 
 	}
 }
+
+//Bot begin
+std::map<std::string, Channels> Server::getServChannels()
+{
+	return _channels;
+}
+
+int	Server::getServerFd()
+{
+	return _serverfd;
+}
+//Bot end

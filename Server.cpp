@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/26 17:31:13 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 16:59:06 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,9 @@ Server::Server(int port, std::string pass)
 	_serverPort = port;
 	_serverfd = 0;
 	_serverfd = socket(AF_INET, SOCK_STREAM, 0);
+	//Bot begin
+	_bot = new Bot("ChatBot", this);
+	//Bot end
 }
 
 Server::~Server()
@@ -54,12 +57,20 @@ void	Server::userConnection(std::string message, int i)
 	{
 		nick(args, i);
 	}
-	if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == false)
+	else if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == false)
+	{
+		std::string errMessage = "[NOTICE] :" + _user[pollFds[i].fd].getUserNickName() + " echec de connection. Déconnection en cours\r\n";
+        send(pollFds[i].fd, errMessage.c_str(), errMessage.size(), 0);
+		std::cout << MAGENTA << "[SERVER] " << GREEN << "Client : " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": Echec de connection!" << RESET << std::endl;
 		destroyUser(pollFds[i].fd);
+	}
 	if (_user[pollFds[i].fd].user == true && _user[pollFds[i].fd].nick == true && _user[pollFds[i].fd].pass == true)
 	{
 		_user[pollFds[i].fd].is_user = true;
 		_channels["#general"].addUser(pollFds[i].fd, _user[pollFds[i].fd].getUserNickName());
+		//Bot begin
+		_bot->Welcome(pollFds[i].fd, _user[pollFds[i].fd].getUserNickName(), "general");
+		//Bot end
 		std::cout << MAGENTA << "[SERVER]" << YELLOW << " new user " << _user[pollFds[i].fd].getUserFd() << " with nickname: " << _user[pollFds[i].fd].getUserNickName() << RESET << std::endl;
 	}
 }
@@ -74,6 +85,14 @@ void Server::serverLoop()
     _channels["#general"] = Channels("#general", 0);
     User newUser(0);
     _user[0] = newUser;
+	
+	//Bot begin
+	User botUser(_bot->botFd);
+	botUser.setUserNickName("ChatBot");
+	_user[_bot->botFd] = botUser;
+	_channels["#general"].addUser(_bot->botFd, _user[_bot->botFd].getUserNickName());
+	//Bot end
+
     char buffer[BUFFER_SIZE];
     while (true)
     {
@@ -116,32 +135,33 @@ void Server::serverLoop()
 						continue;
                     }
                     clientBuffers[pollFds[i].fd] += std::string(buffer, bytesReceived);
-					std::string message;
 					size_t pos;
                     while ((pos = clientBuffers[pollFds[i].fd].find("\n")) != std::string::npos) 
 					{
-						message = (clientBuffers[pollFds[i].fd].substr(0, pos + 1));
-                        clientBuffers[pollFds[i].fd].erase(0, pos + 1);
+						std::string message = clientBuffers[pollFds[i].fd].substr(0, pos + 1);
+						clientBuffers[pollFds[i].fd].erase(0, pos + 1);
+						if (!message.empty() && message[message.size() - 1] == '\r')
+    						message.erase(message.size() - 1);
+						if (message.empty())
+							continue;
+						if (_user[pollFds[i].fd].is_user == false)
+						{
+							userConnection(message, i);
+						}
+						else if (isCommand(message))
+						{
+							std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] " << RESET << BOLD << message << RESET;
+							executeCommand(message, i);
+						}
+						else
+						{
+							std::ostringstream broadcastStream;
+							broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
+							std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] " << RESET << BOLD << message << RESET;
+							std::string broadcastMessage = broadcastStream.str();
+							_channels["#general"].sendMessage(broadcastMessage, pollFds[i].fd);
+						}
 					}
-					if (message.empty())
-						continue;
-                    if (_user[pollFds[i].fd].is_user == false)
-                    {
-						userConnection(message, i);
-                    }
-                    else if (isCommand(message))
-                    {
-						std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] " << RESET << BOLD << message << RESET;
-						executeCommand(message, i);
-					}
-                    else
-                    {
-                        std::ostringstream broadcastStream;
-                        broadcastStream << "Client " << pollFds[i].fd << " " << _user[pollFds[i].fd].getUserNickName() << ": " << message;
-						std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] " << RESET << BOLD << message << RESET;
-                        std::string broadcastMessage = broadcastStream.str();
-                        _channels["#general"].sendMessage(broadcastMessage, pollFds[i].fd);
-                    }
                 }
             }
         }
@@ -151,6 +171,9 @@ void Server::serverLoop()
 
 void Server::clearServ()
 {
+	// Bot begin
+	delete _bot;
+	//Bot end
 	_channels.clear();
 	_user.clear();
 	clientBuffers.clear();
