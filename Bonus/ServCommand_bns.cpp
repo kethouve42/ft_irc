@@ -6,11 +6,11 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:51:29 by kethouve          #+#    #+#             */
-/*   Updated: 2025/03/07 17:30:06 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 22:11:07 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../Includes/Server.hpp"
 
 void Server::nick(std::vector<std::string> message, size_t i)
 {

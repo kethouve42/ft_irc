@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
+/*   Server_bns.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:58:50 by kethouve          #+#    #+#             */
-/*   Updated: 2025/03/07 16:59:06 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/09 01:06:44 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../Includes/Server.hpp"
 
 /*Constructor*/
 Server::Server(int port, std::string pass)
@@ -148,6 +148,13 @@ void Server::serverLoop()
 						{
 							userConnection(message, i);
 						}
+						//Bot begin
+						else if (isBot(message))
+						{
+							std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] " << RESET << BOLD << message << RESET;
+							executeBot(message, i);
+						}
+						//Bot end
 						else if (isCommand(message))
 						{
 							std::cout << CYAN << "[" << _user[pollFds[i].fd].getUserNickName() << "] " << RESET << BOLD << message << RESET;

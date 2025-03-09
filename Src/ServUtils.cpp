@@ -6,11 +6,11 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:17:20 by kethouve          #+#    #+#             */
-/*   Updated: 2025/03/07 16:56:26 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 22:13:29 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../Includes/Server.hpp"
 
 std::vector<std::string>	Server::parseMessage(std::string message)
 {
@@ -218,15 +218,3 @@ void Server::executeCommand(std::string message, int i)
 
 	}
 }
-
-//Bot begin
-std::map<std::string, Channels> Server::getServChannels()
-{
-	return _channels;
-}
-
-int	Server::getServerFd()
-{
-	return _serverfd;
-}
-//Bot end

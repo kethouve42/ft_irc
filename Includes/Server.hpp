@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 13:52:44 by kethouve          #+#    #+#             */
-/*   Updated: 2025/03/07 16:38:25 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/09 01:05:01 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,6 +110,10 @@ class Server
 		void	destroyChannel(std::string salon);
 		void	displayUsers(std::string message, int sender);
 		void	displayChannels(int sender);
+		//Bot begin
 		std::map<std::string, Channels> getServChannels();
 		int		getServerFd();
+		bool isBot(std::string message);
+		void executeBot(std::string message, int i);
+		//Bot end
 };

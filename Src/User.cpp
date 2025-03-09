@@ -6,11 +6,11 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:55:21 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/12 18:59:31 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 22:10:43 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "User.hpp"
+#include "../Includes/User.hpp"
 
 User::User()
 {

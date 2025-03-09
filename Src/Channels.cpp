@@ -6,11 +6,11 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:28:40 by kethouve          #+#    #+#             */
-/*   Updated: 2025/03/07 17:27:33 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 22:10:22 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Channels.hpp"
+#include "../Includes/Channels.hpp"
 
 Channels::Channels(){}
 

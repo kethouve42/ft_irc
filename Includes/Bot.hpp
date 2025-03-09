@@ -2,6 +2,9 @@
 
 #include "Server.hpp"
 
+# include <cstdlib>
+# include <ctime> 
+
 class Server;
 
 class Bot
@@ -16,4 +19,15 @@ class Bot
 		Bot(std::string name, Server *server);
 		~Bot();
 		void Welcome(int user, std::string name, std::string channelName);
+		void Roll(int user, std::string nickname, std::vector<std::string> message);
+
+		struct Die
+		{
+			int dieNumber;
+			int dieFace;
+			int modifier;
+			bool advantage;
+			bool disadvantage;
+		};
+		
 };

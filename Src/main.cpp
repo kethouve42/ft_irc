@@ -6,11 +6,11 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/09 15:01:18 by kethouve          #+#    #+#             */
-/*   Updated: 2025/02/26 15:24:53 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/07 22:10:27 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../Includes/Server.hpp"
 #include <csignal>
 
 Server* g_server = NULL;
