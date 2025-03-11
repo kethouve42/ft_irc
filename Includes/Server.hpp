@@ -26,6 +26,7 @@
 #include <map>
 #include <climits>
 #include <algorithm> 
+#include <ctime> 
 
 #include <stdio.h>
 
@@ -110,6 +111,7 @@ class Server
 		void	destroyChannel(std::string salon);
 		void	displayUsers(std::string message, int sender);
 		void	displayChannels(int sender);
+		void	joke(int sender);
 		//Bot begin
 		std::map<std::string, Channels> getServChannels();
 		int		getServerFd();

@@ -17,9 +17,9 @@ void Bot::Welcome(int user, std::string nickname, std::string channelName)
 {
 	std::ostringstream message;
 	if (channelName == "general")
-    	message << ":" << _name << " PRIVMSG " << nickname << " :Bienvenue sur le serveur, tu as rejoit le canal " << channelName << ", " << nickname << "! 🎉\r\n";
+    	message << ":" << _name << " PRIVMSG " << nickname << " :Bienvenue sur le serveur, tu as rejoint le canal " << channelName << ", " << nickname << "! 🎉\r\n";
 	else
-		message << ":" << _name << " PRIVMSG " << nickname << " :Tu as rejoit le canal " << channelName << ", " << nickname << "! 🎉\r\n";
+		message << ":" << _name << " PRIVMSG " << nickname << " :Tu as rejoint le canal " << channelName << ", " << nickname << "! 🎉\r\n";
     send(user, message.str().c_str(), message.str().size(), 0);
 	if (channelName == "general")
 	{
@@ -118,5 +118,67 @@ void Bot::Roll(int user, std::string nickname, std::vector<std::string> args)
 		}
 		message << "] Total: " << total  << "\r\n" << std::endl;
 		_server->getServChannels()[args[1]].sendMessage(message.str().c_str(), botFd);
+	}
+}
+
+void Bot::joke(int sender, std::string nickname, std::vector<std::string> args)
+{		
+	srand(time(0));
+	int cmd = rand() % 5;
+	std::ostringstream joke;
+	std::ostringstream chut;
+	switch (cmd)
+	{
+		case 1:
+			joke << "BOT " << "Pourquoi les plongeurs plongent-ils toujours en arrière et jamais en avant ?" << std::endl;
+			chut << "BOT " << "Parce que sinon, ils tombent toujours dans le bateau !" << std::endl;
+			break;
+		case 2:
+			joke << "BOT " << "Pourquoi les squelettes ne se battent-ils jamais entre eux ?" << std::endl;
+			chut << "BOT " << "Parce qu’ils n’ont pas les tripes !" << std::endl;
+			break;
+		case 3:
+			joke << "BOT " << "Quel est le comble pour un électricien ?" << std::endl;
+			chut << "BOT " << "De ne pas être au courant !" << std::endl;
+			break;
+		case 4:
+			joke << "BOT " << "Pourquoi l'ordinateur n'a-t-il jamais de vacances ?" << std::endl;
+			chut << "BOT " << "Parce qu'il ne peut pas se déconnecter !" << std::endl;
+			break;
+		case 5:
+			joke << "BOT " << "Quel est le comble pour un cuisinier ?" << std::endl;
+			chut << "BOT " << "De mettre les pieds dans le plats" << std::endl;
+			break;
+		case 6:
+			joke << "BOT " << "Quel est le comble pour un horloger ?" << std::endl;
+			chut << "BOT " << "De se faire remettre les pendules a l'heure" << std::endl;
+			break;
+		case 7:
+			joke << "BOT " << "Quel est le comble pour un horloger ?" << std::endl;
+			chut << "BOT " << "De se faire remettre les pendules a l'heure" << std::endl;
+			break;
+		default:
+			joke << "BOT " << "Pourquoi google adore les bateaux ?" << std::endl;
+			chut << "BOT " << "Parce que c'est un excellent navigateur !" << std::endl;
+			break;
+	}
+	
+	std::string botJoke = joke.str();
+	std::string botchut = chut.str();
+	if (args[1] != _name)
+	{
+		_server->getServChannels()[args[1]].sendMessage(botJoke.c_str(), botFd);
+		usleep(3000000);
+		_server->getServChannels()[args[1]].sendMessage(botchut.c_str(), botFd);
+	}
+	else
+	{
+		std::ostringstream message;
+		message << ":" << _name << " PRIVMSG " << nickname << " " << botJoke;
+		send(sender, message.str().c_str(), message.str().size(), 0);
+		usleep(3000000);
+		std::ostringstream message2;
+		message2 << ":" << _name << " PRIVMSG " << nickname << " " << botchut;
+		send(sender, message2.str().c_str(), message2.str().size(), 0);
 	}
 }

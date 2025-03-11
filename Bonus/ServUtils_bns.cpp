@@ -243,7 +243,7 @@ bool Server::isBot(std::string message)
 		cmd = cmd.substr(0, pos);
 		cmd.erase(cmd.find_last_not_of(" \t\n\r") + 1);
 	}
-	if (cmd == ":!roll")
+	if (cmd == ":!roll" || cmd == "!joke")
 		return true;
 	return false;
 }
@@ -254,6 +254,10 @@ void Server::executeBot(std::string message, int i)
 	if(args[2] == ":!roll")
 	{
 		_bot->Roll(pollFds[i].fd, _user[pollFds[i].fd].getUserNickName(), args);
+	}
+	else if(args[2] == "!joke")
+	{
+		_bot->joke(pollFds[i].fd, _user[pollFds[i].fd].getUserNickName(), args);
 	}
 	args.clear();
 }

@@ -20,6 +20,7 @@ class Bot
 		~Bot();
 		void Welcome(int user, std::string name, std::string channelName);
 		void Roll(int user, std::string nickname, std::vector<std::string> message);
+		void joke(int sender, std::string nickname, std::vector<std::string> args);
 
 		struct Die
 		{
