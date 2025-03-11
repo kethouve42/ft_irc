@@ -6,7 +6,7 @@
 /*   By: kethouve <kethouve@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:17:20 by kethouve          #+#    #+#             */
-/*   Updated: 2025/03/09 18:49:30 by kethouve         ###   ########.fr       */
+/*   Updated: 2025/03/11 15:10:00 by kethouve         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -243,8 +243,10 @@ bool Server::isBot(std::string message)
 		cmd = cmd.substr(0, pos);
 		cmd.erase(cmd.find_last_not_of(" \t\n\r") + 1);
 	}
-	if (cmd == ":!roll" || cmd == "!joke")
+	if (cmd == ":!roll" || cmd == ":!joke")
+	{
 		return true;
+	}
 	return false;
 }
 
@@ -255,7 +257,7 @@ void Server::executeBot(std::string message, int i)
 	{
 		_bot->Roll(pollFds[i].fd, _user[pollFds[i].fd].getUserNickName(), args);
 	}
-	else if(args[2] == "!joke")
+	else if(args[2] == ":!joke")
 	{
 		_bot->joke(pollFds[i].fd, _user[pollFds[i].fd].getUserNickName(), args);
 	}

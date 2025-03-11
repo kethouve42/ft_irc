@@ -124,42 +124,88 @@ void Bot::Roll(int user, std::string nickname, std::vector<std::string> args)
 void Bot::joke(int sender, std::string nickname, std::vector<std::string> args)
 {		
 	srand(time(0));
-	int cmd = rand() % 5;
+	int cmd = rand() % 20;
 	std::ostringstream joke;
 	std::ostringstream chut;
+	std::ostringstream message;
+	std::ostringstream message2;
 	switch (cmd)
 	{
 		case 1:
-			joke << "BOT " << "Pourquoi les plongeurs plongent-ils toujours en arrière et jamais en avant ?" << std::endl;
-			chut << "BOT " << "Parce que sinon, ils tombent toujours dans le bateau !" << std::endl;
+			joke << "Pourquoi les plongeurs plongent-ils toujours en arrière et jamais en avant ?" << std::endl;
+			chut << "Parce que sinon, ils tombent toujours dans le bateau !" << std::endl;
 			break;
 		case 2:
-			joke << "BOT " << "Pourquoi les squelettes ne se battent-ils jamais entre eux ?" << std::endl;
-			chut << "BOT " << "Parce qu’ils n’ont pas les tripes !" << std::endl;
+			joke << "Pourquoi les squelettes ne se battent-ils jamais entre eux ?" << std::endl;
+			chut << "Parce qu’ils n’ont pas les tripes !" << std::endl;
 			break;
 		case 3:
-			joke << "BOT " << "Quel est le comble pour un électricien ?" << std::endl;
-			chut << "BOT " << "De ne pas être au courant !" << std::endl;
+			joke << "Quel est le comble pour un électricien ?" << std::endl;
+			chut << "De ne pas être au courant !" << std::endl;
 			break;
 		case 4:
-			joke << "BOT " << "Pourquoi l'ordinateur n'a-t-il jamais de vacances ?" << std::endl;
-			chut << "BOT " << "Parce qu'il ne peut pas se déconnecter !" << std::endl;
+			joke << "Pourquoi l'ordinateur n'a-t-il jamais de vacances ?" << std::endl;
+			chut << "Parce qu'il ne peut pas se déconnecter !" << std::endl;
 			break;
 		case 5:
-			joke << "BOT " << "Quel est le comble pour un cuisinier ?" << std::endl;
-			chut << "BOT " << "De mettre les pieds dans le plats" << std::endl;
+			joke << "Quel est le comble pour un cuisinier ?" << std::endl;
+			chut << "De mettre les pieds dans le plats" << std::endl;
 			break;
 		case 6:
-			joke << "BOT " << "Quel est le comble pour un horloger ?" << std::endl;
-			chut << "BOT " << "De se faire remettre les pendules a l'heure" << std::endl;
+			joke << "Quel est le comble pour un horloger ?" << std::endl;
+			chut << "De se faire remettre les pendules a l'heure" << std::endl;
 			break;
 		case 7:
-			joke << "BOT " << "Quel est le comble pour un horloger ?" << std::endl;
-			chut << "BOT " << "De se faire remettre les pendules a l'heure" << std::endl;
+			joke << "Quel est le comble pour un marchand de meuble ?" << std::endl;
+			chut << "C'est d'avoir un squelette dans le placard" << std::endl;
+			break;
+		case 8:
+			joke << "Quel est le comble pour un vignoble ?" << std::endl;
+			chut << "C'est de vouloir qu'on lui lache la grappe" << std::endl;
+			break;
+		case 9:
+			joke << "Quel est le comble pour une montre ?" << std::endl;
+			chut << "C'est de tuer le temps" << std::endl;
+			break;
+		case 10:
+			joke << "Quel est le comble pour un pompier ?" << std::endl;
+			chut << "C'est de brûler les étapes" << std::endl;
+			break;
+		case 11:
+			joke << "Quel est le comble pour une souris ?" << std::endl;
+			chut << "C'est de donner sa langue au chat" << std::endl;
+			break;
+		case 12:
+			joke << "Quel est le comble pour un astronome ?" << std::endl;
+			chut << "C'est d'être dans la lune" << std::endl;
+			break;
+		case 13:
+			joke << "Quel est le comble pour un pêcheur ?" << std::endl;
+			chut << "C'est de noyer le poisson" << std::endl;
+			break;
+		case 14:
+			joke << "Quel est le comble pour un albinos ?" << std::endl;
+			chut << "C'est de voir la vie en rose" << std::endl;
+			break;
+		case 15:
+			joke << "Quel est le comble pour un électricien ?" << std::endl;
+			chut << "C'est de pêter les plombs" << std::endl;
+			break;
+		case 16:
+			joke << "Quel est le comble pour un oiseau ?" << std::endl;
+			chut << "C'est de se faire voler dans les plumes" << std::endl;
+			break;
+		case 17:
+			joke << "Quel est le comble pour un mineur ?" << std::endl;
+			chut << "C'est de se creuser la tête" << std::endl;
+			break;
+		case 18:
+			joke << "Quel est le comble pour un vendeur IKEA ?" << std::endl;
+			chut << "C'est d'être mis au placard" << std::endl;
 			break;
 		default:
-			joke << "BOT " << "Pourquoi google adore les bateaux ?" << std::endl;
-			chut << "BOT " << "Parce que c'est un excellent navigateur !" << std::endl;
+			joke << "Pourquoi google adore les bateaux ?" << std::endl;
+			chut << "Parce que c'est un excellent navigateur !" << std::endl;
 			break;
 	}
 	
@@ -167,17 +213,17 @@ void Bot::joke(int sender, std::string nickname, std::vector<std::string> args)
 	std::string botchut = chut.str();
 	if (args[1] != _name)
 	{
-		_server->getServChannels()[args[1]].sendMessage(botJoke.c_str(), botFd);
+		message << ":" << _name << " PRIVMSG " << args[1] << " : " << botJoke;
+		_server->getServChannels()[args[1]].sendMessage(message.str().c_str(), botFd);
 		usleep(3000000);
-		_server->getServChannels()[args[1]].sendMessage(botchut.c_str(), botFd);
+		message2 << ":" << _name << " PRIVMSG " << args[1] << " : " << botchut;
+		_server->getServChannels()[args[1]].sendMessage(message2.str().c_str(), botFd);
 	}
 	else
 	{
-		std::ostringstream message;
 		message << ":" << _name << " PRIVMSG " << nickname << " " << botJoke;
 		send(sender, message.str().c_str(), message.str().size(), 0);
 		usleep(3000000);
-		std::ostringstream message2;
 		message2 << ":" << _name << " PRIVMSG " << nickname << " " << botchut;
 		send(sender, message2.str().c_str(), message2.str().size(), 0);
 	}
